@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - name: Install
+        run: pip install -r requirements.txt ruff==0.6.9
+      - name: Lint
+        run: ruff check src tests scripts notebooks
+      - name: Tests (synthetic data only)
+        run: pytest -q
+      - name: Notebooks match their .py sources
+        run: python scripts/build_notebooks.py --check
+      - name: Pipeline and notebooks on synthetic data
+        env:
+          HOUSING_SYNTHETIC: "1"
+          MPLBACKEND: Agg
+        run: |
+          python scripts/build_data.py > /dev/null
+          for nb in notebooks/[0-9]*.py; do echo "== $nb"; python "$nb" > /dev/null; done
+      - name: Recorded metrics are untouched by synthetic runs
+        run: git diff --exit-code reports/metrics
