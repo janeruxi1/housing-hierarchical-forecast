@@ -8,6 +8,7 @@ def test_metro_short_matches_zillow_style():
     assert ingest.metro_short("Seattle-Tacoma-Bellevue, WA") == "Seattle, WA"
     assert ingest.metro_short("New York-Newark-Jersey City, NY-NJ-PA") == "New York, NY"
     assert ingest.metro_short("Tucson, AZ") == "Tucson, AZ"          # already short
+    assert ingest.metro_short("Louisville/Jefferson County, KY-IN") == "Louisville, KY"
     assert ingest.metro_short("") == ""
     assert ingest.metro_short(np.nan) == ""
 

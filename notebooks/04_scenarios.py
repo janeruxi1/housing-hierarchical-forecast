@@ -20,7 +20,7 @@
 # |---|---|
 # | **Question** | What does the chosen model expect for the next 12 months, and how much would a rate shock change that? |
 # | **Answer** | From September 2026, the baseline is about 3% growth over 12 months for the panel's homes. Metros range from under 2% (bottom quarter) to over 4% (top quarter). That is about 1 pp above Zillow's own forecasts for the typical metro and 2 pp above for the nation, though the two agree on which metros grow faster (correlation 0.79). A sudden 1-point rise in mortgage rates cuts 12-month growth by 0.8-2.1 pp, depending on whether the pandemic years are in the training data. That is $0.45-1.2 trillion of housing value. The hit is about four times larger in high-beta Sun Belt metros (Las Vegas -4.2 pp, Phoenix -3.8 pp) than in Rust Belt and Northeast metros (Pittsburgh -1.0 pp). |
-# | **Next** | The decision memo turns this into a recommendation. |
+# | **Next** | The [decision memo](../reports/decision_memo.md) turns this into a recommendation. |
 
 # %%
 import os
@@ -227,16 +227,35 @@ save(fig, "04_us_scenarios")
 shock1 = scenarios.shock_path(now["county_coefs"]["full sample"], scenarios.SCENARIOS["Rates +1 pt"])
 v1 = scenarios.apply(now["combo"], S_df, y0, beta, shock1)
 hit = 100 * np.log(v1[12] / base_vals[12])
+shock2 = scenarios.shock_path(now["county_coefs"]["full sample"], scenarios.SCENARIOS["Rates +2 pt (stress)"])
+v2 = scenarios.apply(now["combo"], S_df, y0, beta, shock2)
+hit2 = np.log(v2[12] / base_vals[12])
+zil = z12.set_index("unique_id")["growth_pct"]
 metro_beta = (beta * hu.reindex(beta.index)).groupby(nodes.set_index("County")["Metro"].reindex(beta.index)).sum() / \
     hu.reindex(beta.index).groupby(nodes.set_index("County")["Metro"].reindex(beta.index)).sum()
 big50 = hu.reindex(metros).nlargest(50).index
 exp_tab = pd.DataFrame({"housing units": hu[big50], "beta": metro_beta.reindex(big50),
                         "baseline 12m (%)": 100 * g12[big50], "rates +1: change (pp)": hit[big50],
-                        "rates +1: value change ($bn)": (v1[12] - base_vals[12])[big50] / 1e9})
+                        "rates +1: value change ($bn)": (v1[12] - base_vals[12])[big50] / 1e9,
+                        "Zillow 12m (%)": zil.reindex(big50),
+                        # conservative stress: Zillow's level, this model's +2 pt shock for the metro
+                        "Zillow + rates +2 (%)": 100 * ((1 + zil.reindex(big50) / 100) * np.exp(hit2[big50]) - 1)})
 exp_tab.index = exp_tab.index.str[4:]
 exp_tab = exp_tab.sort_values("rates +1: change (pp)")
 write_metrics("04_metro_exposure", exp_tab.reset_index(names="metro"))
 exp_tab.head(10).round(2)
+
+# %% [markdown]
+# **A conservative stress view.** The baseline here sits above Zillow's (section 2), so the last
+# column takes Zillow's own 12-month forecast as the starting level and applies this model's
+# +2-point rate shock for each metro. Metros where that column is negative are where a lender or
+# investor could see values *fall* over the next year under stress.
+
+# %%
+falls = exp_tab[exp_tab["Zillow + rates +2 (%)"] < 0].sort_values("Zillow + rates +2 (%)")
+write_metrics("04_stress_falls", {"metros_of_50_falling": int(len(falls)), "metros_with_zillow_forecast": int(exp_tab["Zillow 12m (%)"].notna().sum()),
+                                  "falling": falls["Zillow + rates +2 (%)"].round(2).to_dict()})
+falls[["beta", "Zillow 12m (%)", "rates +1: change (pp)", "Zillow + rates +2 (%)"]].round(2)
 
 # %%
 sel = pd.concat([exp_tab.head(10), exp_tab.tail(10)])

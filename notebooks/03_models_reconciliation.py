@@ -32,7 +32,7 @@
 # | | |
 # |---|---|
 # | **Question** | Do models beat momentum, especially at turning points, and does making forecasts add up help or hurt accuracy? |
-# | **Answer** | Yes. The chosen forecast averages a per-place ARIMA with a rates-aware panel regression, then adds counties up to every level (bottom-up). It cuts the metro 12-month error from 5.9 pp (momentum) to 5.1 pp, 14% lower. In the 2022-23 rate shock the drop is from 10.7 pp to 6.1 pp, 43% lower. Making the numbers add up costs almost nothing: bottom-up is as accurate as the best MinTrace variant. Weighting by tree shape alone (wls_struct) is badly wrong once forecasts are in dollars. The intervals are too narrow: nominal 80% intervals cover about 72% of metro outcomes at 12 months. |
+# | **Answer** | Yes. The chosen forecast averages a per-place ARIMA with a rates-aware panel regression, then adds counties up to every level (bottom-up). It cuts the metro 12-month error from 5.9 pp (momentum) to 5.1 pp, 14% lower. In the 2022-23 rate shock the drop is from 10.6 pp to 6.0 pp, 44% lower. Making the numbers add up costs almost nothing: at metro and county level, bottom-up is as accurate as the best MinTrace variant. Weighting by tree shape alone (wls_struct) is badly wrong once forecasts are in dollars. The intervals are too narrow: nominal 80% intervals cover about 73% of metro outcomes at 12 months. |
 # | **Next** | Notebook 04 runs the rate and recession scenarios through the chosen model. |
 
 # %%
@@ -197,6 +197,7 @@ tab.round(3)
 # %%
 fr = bt.score(res[res["method"].isin([chosen, "momentum", "naive"]) & (res["level"] == "Metro")],
               by=("method", "regime", "h"))
+write_metrics("03_final_by_regime", fr)
 fr[fr["h"] == 12].pivot_table(index="regime", columns="method", values="rmse_pp", observed=True).round(2)
 
 # %% [markdown]

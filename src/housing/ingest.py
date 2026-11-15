@@ -144,4 +144,5 @@ def metro_short(full: str) -> str:
     if not isinstance(full, str) or "," not in full:
         return full if isinstance(full, str) else ""
     city, states = full.rsplit(",", 1)
-    return f"{city.split('-')[0].strip()}, {states.strip().split('-')[0]}"
+    first = city.split("-")[0].split("/")[0].strip()   # 'Louisville/Jefferson County' -> 'Louisville'
+    return f"{first}, {states.strip().split('-')[0]}"
