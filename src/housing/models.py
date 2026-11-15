@@ -109,8 +109,12 @@ def _cum_normal_equations(X: np.ndarray, y: np.ndarray, valid: np.ndarray):
 
 
 def panel(L: pd.DataFrame, F: dict, levels: dict, origins: pd.DatetimeIndex, horizons=HORIZONS,
-          ridge: float = 1e-4) -> tuple[dict, dict]:
+          ridge: float = 1e-4, exclude: tuple[str, str] | None = None) -> tuple[dict, dict]:
     """Direct h-step pooled OLS per level. Returns ({(origin, h): forecast per node}, coefficients).
+
+    `exclude` drops training rows whose *target window* overlaps a period (e.g. the 2020-21
+    pandemic, when unemployment spiked while prices boomed), to test how much a coefficient
+    depends on it.
 
     Training rows for origin o and horizon h are months t with t + h <= o, so every target used is
     fully observed at the origin. Features are standardised with the training-period scale.
@@ -131,6 +135,11 @@ def panel(L: pd.DataFrame, F: dict, levels: dict, origins: pd.DatetimeIndex, hor
             y[:-h] = Lv[h:] - Lv[:-h]
             valid = np.isfinite(X).all(-1) & np.isfinite(y)
             valid[:start] = False
+            if exclude is not None:
+                a, b = (pd.Timestamp(x) for x in exclude)
+                t = L.index
+                overlap = (t + pd.offsets.MonthEnd(h) >= a) & (t <= b)
+                valid[overlap] = False
             XtX, Xty = _cum_normal_equations(np.nan_to_num(X), np.nan_to_num(y), valid)
             k = X.shape[-1]
             pen = ridge * np.eye(k)

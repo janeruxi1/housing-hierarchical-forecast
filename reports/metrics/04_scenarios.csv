@@ -1,0 +1,10 @@
+scenario,coefficients,US 12-month growth (%),vs baseline (pp),value change vs baseline ($bn)
+Baseline,-,3.1769,0,0
+Rates +1 pt,full sample,1.00711,-2.12541,-1233.05
+Rates +2 pt (stress),full sample,-1.11096,-4.24466,-2436.7
+Rates -1 pt,full sample,5.39981,2.13159,1263.24
+"Recession (unemployment +3, rates -1)",full sample,7.08093,3.71399,2218.58
+Rates +1 pt,pandemic left out,2.37756,-0.777746,-454.25
+Rates +2 pt (stress),pandemic left out,1.58525,-1.55467,-904.504
+Rates -1 pt,pandemic left out,3.98334,0.778572,458.284
+"Recession (unemployment +3, rates -1)",pandemic left out,4.25689,1.0413,613.737

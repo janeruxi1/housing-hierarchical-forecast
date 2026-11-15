@@ -1,7 +1,7 @@
 # Hierarchical home-value forecasting: county to nation, coherent at every level
 
-> **Status: in progress.** Data audit, baselines, models and reconciliation are done on the real
-> data (Zillow release through September 2026); scenarios and the decision memo are next.
+> **Status: in progress.** Data audit, baselines, models, reconciliation and scenarios are done on
+> the real data (Zillow release through September 2026); the decision memo and model card are next.
 
 **Question.** Where will US home values go over the next 1 to 12 months, for the nation, every
 state, every metro and every county, so that the numbers agree with each other? And what happens
@@ -42,7 +42,7 @@ download ─> county panel (balanced from 2005) ─> hierarchy: US > state / met
 | Data audit and coherence check | [01](notebooks/01_data_audit.ipynb) | done |
 | Baselines and backtest harness | [02](notebooks/02_baselines_backtest.ipynb) | done |
 | Models and reconciliation | [03](notebooks/03_models_reconciliation.ipynb) | done |
-| Scenarios | 04 | planned |
+| Forecast from today and scenarios | [04](notebooks/04_scenarios.ipynb) | done |
 
 ## Results so far
 
@@ -63,7 +63,16 @@ download ─> county panel (balanced from 2005) ─> hierarchy: US > state / met
 * **Uncertainty.** Time-safe conformal intervals are too narrow: nominal 80% intervals cover about 72% of metro
   outcomes at 12 months, because errors bunch up at turning points.
 
+* **The outlook from September 2026.** About 3% growth over 12 months for the panel's homes. That is
+  1-2 pp above Zillow's own forecast, but the two rank metros alike (correlation 0.79 across 439 metros).
+* **Rate stress test.** A sudden 1-point rise in mortgage rates lowers 12-month growth by 0.8-2.1 pp
+  (the range is model uncertainty: with or without the pandemic years in training), or $0.45-1.2
+  trillion of housing value. High-beta Sun Belt metros take about four times the hit of Rust Belt and
+  Northeast metros (Las Vegas -4.2 pp, Phoenix -3.8 pp, Pittsburgh -1.0 pp).
+
 ![Metro 12-month errors over time](reports/figures/02_metro_error_over_time.png)
+
+![Rate shock exposure by metro](reports/figures/04_metro_exposure.png)
 
 ## Run it
 

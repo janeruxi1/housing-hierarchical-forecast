@@ -1,0 +1,10 @@
+{
+  "zillow_base_month": "2026-09-30",
+  "same_month": true,
+  "metros_compared": 439,
+  "correlation": 0.7872907819756982,
+  "median_gap_pp": 1.1815928183651752,
+  "mean_abs_gap_pp": 1.3833236963173658,
+  "us_zillow_pct": 1.1,
+  "us_ours_pct": 3.176900470752231
+}
