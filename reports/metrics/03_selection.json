@@ -1,0 +1,27 @@
+{
+  "chosen": "combo+bottom_up",
+  "avg_rmse_pp": 2.0548334611543466,
+  "momentum_avg_rmse_pp": 2.7028809225253427,
+  "ranking": {
+    "combo+bottom_up": 2.0548,
+    "combo+wls_var": 2.0562,
+    "ar2+bottom_up": 2.2393,
+    "ar2+wls_var": 2.2436,
+    "combo+mint_shrink": 2.2833,
+    "panel+bottom_up": 2.3501,
+    "panel+wls_var": 2.355,
+    "ar2+mint_shrink": 2.4124,
+    "zillow_style+mint_shrink": 2.4868,
+    "zillow_style+bottom_up": 2.5324,
+    "zillow_style+wls_var": 2.5327,
+    "zillow_style+wls_struct": 2.5727,
+    "momentum+mint_shrink": 2.6219,
+    "momentum+wls_var": 2.7101,
+    "momentum+bottom_up": 2.711,
+    "momentum+wls_struct": 2.7111,
+    "ar2+wls_struct": 2.9049,
+    "panel+mint_shrink": 2.9128,
+    "combo+wls_struct": 3.5893,
+    "panel+wls_struct": 5.7002
+  }
+}

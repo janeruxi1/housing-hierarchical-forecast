@@ -132,7 +132,7 @@ def load_fred(raw: Path, series: str) -> pd.Series:
     date_col = "observation_date" if "observation_date" in df.columns else df.columns[0]
     s = pd.to_numeric(df[series], errors="coerce")
     s.index = pd.to_datetime(df[date_col])
-    return s.dropna().resample("ME").mean().rename(series)
+    return s.dropna().resample("ME").mean().rename(series).rename_axis("date")
 
 
 def metro_short(full: str) -> str:

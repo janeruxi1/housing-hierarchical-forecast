@@ -7,6 +7,7 @@ requests>=2.31,<3         # scripts/download_data.py
 statsforecast>=2.0,<3
 hierarchicalforecast>=1.2,<2
 utilsforecast>=0.2,<1
+scipy>=1.11,<2            # sparse matrices in the reconciliation
 statsmodels>=0.14,<1
 linearmodels>=6,<8        # panel regression with clustered errors
 matplotlib>=3.8,<4

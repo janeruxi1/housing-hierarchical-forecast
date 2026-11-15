@@ -93,26 +93,29 @@ def mase_scale(L: pd.DataFrame, horizons=HORIZONS, before: str = FIRST_ORIGIN) -
 
 
 def add_context(res: pd.DataFrame, scale: pd.DataFrame) -> pd.DataFrame:
-    res = res.copy()
-    res["err"] = res["pred"] - res["actual"]
-    res["level"] = level_of(res["unique_id"].astype(str)).astype("category")
-    res["target"] = res["origin"].values.astype("datetime64[M]") + res["h"].values.astype("timedelta64[M]")
-    res["target"] = pd.to_datetime(res["target"]) + pd.offsets.MonthEnd(0)
-    res["regime"] = pd.cut(res["target"], bins=[pd.Timestamp(a) - pd.Timedelta(days=1) for a, _, _ in REGIMES]
-                           + [pd.Timestamp(REGIMES[-1][1])], labels=[r for _, _, r in REGIMES])
-    s = scale.stack().rename("scale").reset_index().rename(columns={"level_1": "h"})
-    s["unique_id"] = s["unique_id"].astype(str)
-    res = res.merge(s, on=["unique_id", "h"], how="left") if len(res) < 2e6 else _merge_scale(res, scale)
-    return res
+    """Add error, level, target month, regime and MASE scale. Works in place (8M-row tables fit in 3 GB).
 
-
-def _merge_scale(res: pd.DataFrame, scale: pd.DataFrame) -> pd.DataFrame:
-    """Memory-friendly lookup for big result tables."""
-    res["scale"] = np.nan
-    uid = res["unique_id"].astype(str)
-    for h in scale.columns:
-        m = res["h"].to_numpy() == h
-        res.loc[m, "scale"] = uid[m].map(scale[h]).to_numpy()
+    Lookups go through the categorical codes of unique_id, so no per-row strings are created.
+    """
+    if not isinstance(res["unique_id"].dtype, pd.CategoricalDtype):
+        res["unique_id"] = res["unique_id"].astype("category")
+    cats = res["unique_id"].cat.categories.astype(str)
+    codes = res["unique_id"].cat.codes.to_numpy()
+    res["err"] = (res["pred"] - res["actual"]).astype("float32")
+    lv = level_of(pd.Series(cats))
+    res["level"] = pd.Categorical(lv.to_numpy()[codes], categories=["National", "State", "Metro", "County"])
+    h = res["h"].to_numpy().astype(int)
+    month = res["origin"].to_numpy().astype("datetime64[M]") + h.astype("timedelta64[M]")
+    res["target"] = pd.to_datetime(month) + pd.offsets.MonthEnd(0)
+    starts = np.array([np.datetime64(a, "M") for a, _, _ in REGIMES])
+    k = np.searchsorted(starts, month, side="right") - 1
+    labels = [r for _, _, r in REGIMES]
+    res["regime"] = pd.Categorical.from_codes(np.where(k >= 0, k, -1), categories=labels)
+    sc = scale.reindex(cats)
+    res["scale"] = np.full(len(res), np.nan, dtype="float32")
+    for hh in sc.columns:
+        m = h == hh
+        res.loc[m, "scale"] = sc[hh].to_numpy().astype("float32")[codes[m]]
     return res
 
 
@@ -123,8 +126,9 @@ def score(res: pd.DataFrame, by=("method", "level", "h")) -> pd.DataFrame:
     the naive rule would have been historically. Direction hit rate counts forecasts whose sign of
     growth matches the outcome (undefined for naive, which always predicts 0).
     """
-    r = res.assign(abs_err=res["err"].abs(), sq=res["err"] ** 2, ase=res["err"].abs() / res["scale"],
-                   hit=(np.sign(res["pred"]) == np.sign(res["actual"])).astype(float))
+    r = res[list(by) + ["err"]].assign(
+        abs_err=res["err"].abs(), sq=res["err"].astype("float64") ** 2, ase=res["err"].abs() / res["scale"],
+        hit=(np.sign(res["pred"]) == np.sign(res["actual"])).astype("float32"))
     g = r.groupby(list(by), observed=True)
     out = pd.DataFrame({
         "rmse_pp": 100 * np.sqrt(g["sq"].mean()),
@@ -164,3 +168,38 @@ def zillow_comparison(res: pd.DataFrame, Y: pd.DataFrame, top: int = 100) -> pd.
     out = r.groupby(["method", "h"], observed=True)["err"].apply(lambda e: np.sqrt(np.mean(e ** 2))).unstack("h")
     out.loc["Zillow (published)"] = pd.Series(ZILLOW_PUBLISHED_RMSE)
     return out
+
+
+def conformal_coverage(res: pd.DataFrame, levels=(0.8, 0.95), min_past: int = 8) -> pd.DataFrame:
+    """Time-safe prediction intervals for one method, and how often they cover the outcome.
+
+    At each origin, for each node: interval = forecast +/- q x sd, where sd is the spread of the
+    node's own past errors (origins whose outcome was known by then) and q is the quantile of
+    |past error| / sd pooled over the nodes of the same level. No future error is ever used.
+    Returns coverage and median width (pp) by level, horizon and nominal level.
+    """
+    rows = []
+    for h, d in res.groupby("h"):
+        E = d.pivot(index="origin", columns="unique_id", values="err").sort_index()
+        lv = level_of(E.columns.to_series().astype(str)).to_numpy()
+        origins_ = E.index
+        target_end = origins_.values.astype("datetime64[M]") + np.timedelta64(int(h), "M")
+        Ev = E.to_numpy()
+        for k, o in enumerate(origins_):
+            past = target_end < np.datetime64(o, "M") + np.timedelta64(1, "M")
+            if past.sum() < min_past:
+                continue
+            P = Ev[past]
+            sd = P.std(0, ddof=1)
+            z = np.abs(P) / sd
+            for level in np.unique(lv):
+                m = lv == level
+                for nominal in levels:
+                    q = np.nanquantile(z[:, m], nominal)
+                    half = q * sd[m]
+                    rows.append({"h": h, "level": level, "nominal": nominal, "origin": o,
+                                 "covered": np.nanmean(np.abs(Ev[k, m]) <= half),
+                                 "width_pp": 200 * np.nanmedian(half)})
+    out = pd.DataFrame(rows)
+    return out.groupby(["level", "h", "nominal"]).agg(coverage=("covered", "mean"), median_width_pp=("width_pp", "median"),
+                                                       origins=("origin", "nunique")).reset_index()

@@ -1,7 +1,7 @@
 # Hierarchical home-value forecasting: county to nation, coherent at every level
 
-> **Status: in progress.** Data audit and baseline backtest are done on the real data (Zillow
-> release through September 2026); models, reconciliation and scenarios are next.
+> **Status: in progress.** Data audit, baselines, models and reconciliation are done on the real
+> data (Zillow release through September 2026); scenarios and the decision memo are next.
 
 **Question.** Where will US home values go over the next 1 to 12 months, for the nation, every
 state, every metro and every county, so that the numbers agree with each other? And what happens
@@ -41,7 +41,7 @@ download ─> county panel (balanced from 2005) ─> hierarchy: US > state / met
 |---|---|---|
 | Data audit and coherence check | [01](notebooks/01_data_audit.ipynb) | done |
 | Baselines and backtest harness | [02](notebooks/02_baselines_backtest.ipynb) | done |
-| Models and reconciliation | 03 | planned |
+| Models and reconciliation | [03](notebooks/03_models_reconciliation.ipynb) | done |
 | Scenarios | 04 | planned |
 
 ## Results so far
@@ -53,6 +53,16 @@ download ─> county panel (balanced from 2005) ─> hierarchy: US > state / met
   12-month RMSE 5.9 pp vs 7.6 pp for "no change", direction right 84% of the time. It fails at turning
   points: 10.7 pp in the 2022-23 rate shock, worse than "no change" (8.1 pp).
 
+* **The chosen forecast.** The equal-weight average of a per-place ARIMA(2,1,0) and a rates-aware
+  direct panel regression, made coherent bottom-up (counties sum exactly to metros, states and the nation).
+  Over 47 quarterly forecast dates (2014-2025), it cuts metro 12-month error to 5.1 pp, 14% below momentum.
+  In the 2022-23 rate shock it cuts that error from 10.7 to 6.1 pp, 43% lower.
+* **Reconciliation.** Coherence costs almost nothing with bottom-up or variance-weighted MinTrace. MinTrace
+  weighted only by tree shape (wls_struct) fails badly in dollar terms, and full-covariance MinTrace helps weak
+  base models but adds noise to strong ones.
+* **Uncertainty.** Time-safe conformal intervals are too narrow: nominal 80% intervals cover about 72% of metro
+  outcomes at 12 months, because errors bunch up at turning points.
+
 ![Metro 12-month errors over time](reports/figures/02_metro_error_over_time.png)
 
 ## Run it
@@ -62,6 +72,7 @@ python -m venv .venv && source .venv/bin/activate     # Windows: .venv\Scripts\a
 pip install -r requirements.txt
 python scripts/download_data.py      # about 60 files, a few minutes
 python scripts/build_data.py         # builds data/processed/ and reports/metrics/data_audit.json
+python scripts/run_models.py         # model + reconciliation backtest, about 2 minutes
 python scripts/build_notebooks.py --execute
 pytest -q                            # runs on synthetic data, as CI does
 ```
@@ -77,7 +88,8 @@ pytest -q                            # runs on synthetic data, as CI does
 ## Repository layout
 
 ```
-src/housing/      config, ingest, hierarchy, panel build, checks, synthetic data, plots
+src/housing/      config, ingest, hierarchy, panel build, checks, backtest, models, reconcile,
+                  pipeline, synthetic data, plots
 scripts/          download_data.py, build_data.py, build_notebooks.py
 notebooks/        percent-format .py sources and the generated .ipynb
 tests/            pytest on synthetic data

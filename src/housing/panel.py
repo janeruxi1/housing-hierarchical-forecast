@@ -102,7 +102,7 @@ def build(raw: Path, out: Path) -> dict:
         if (raw / "fred" / f"{s}.csv").exists():
             su.append(ingest.load_fred(raw, s).rename("unrate").reset_index().assign(state=s[:-2]))
     if su:
-        pd.concat(su).rename(columns={"index": "date"}).to_parquet(out / "state_unemp.parquet", index=False)
+        pd.concat(su).to_parquet(out / "state_unemp.parquet", index=False)
     if (raw / "population_county.csv").exists():
         ingest.load_population(raw).to_parquet(out / "population_county.parquet", index=False)
 

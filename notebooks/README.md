@@ -6,8 +6,10 @@ Read them in order. Each notebook opens with its question and a short answer.
 |---|---|---|---|
 | 01 | [Data audit](01_data_audit.ipynb) | Can county values be added up to metros, states and the nation, and do they track Zillow's own series? | Rebuilt vs published US series; metro gap histogram |
 | 02 | [Baselines and backtest](02_baselines_backtest.ipynb) | How well do simple rules forecast, at each level and horizon, and where do they break? | Error by horizon; metro errors over time |
-| 03 | Models and reconciliation _(next)_ | Do statistical, panel and Zillow-style models beat them, and does reconciliation help? | |
-| 04 | Scenarios _(planned)_ | What happens to each metro if rates rise 1 point, or a recession hits? | |
+| 03 | [Models and reconciliation](03_models_reconciliation.ipynb) | Do ARIMA, panel and Zillow-style models beat momentum, and does making forecasts add up cost accuracy? | Base models vs baselines; reconciliation skill |
+| 04 | Scenarios _(next)_ | What happens to each metro if rates rise 1 point, or a recession hits? | |
 
 **Running them.** Each `.ipynb` is generated from the `.py` file beside it (the `.py` is the
-source). With `HOUSING_SYNTHETIC=1` they run on made-up data, as CI does.
+source). Notebook 03 reads `data/processed/backtest_models.parquet`, written by
+`python scripts/run_models.py` (about 2 minutes). With `HOUSING_SYNTHETIC=1` everything runs on
+made-up data, as CI does.
