@@ -21,7 +21,7 @@ def norm(text: str) -> str:
 DOCS = {name: norm((ROOT / path).read_text(encoding="utf-8"))
         for name, path in [("readme", "README.md"), ("memo", "reports/decision_memo.md"),
                            ("card", "MODEL_CARD.md"), ("nb03", "notebooks/03_models_reconciliation.py"),
-                           ("nb04", "notebooks/04_scenarios.py")]}
+                           ("nb04", "notebooks/04_scenarios.py"), ("phases", "docs/PHASES.md")]}
 
 
 def j(name):
@@ -126,6 +126,23 @@ CLAIMS = {
         f"expects {f1(zf['us_ours_pct'])}% national growth", f"Zillow's {f1(zf['us_zillow_pct'])}%",
         f"(correlation {zf['correlation']:.2f})", f"median {f1(zf['median_gap_pp'])} pp higher",
         f"from {f1(r1_full['vs baseline (pp)'])} to {f1(r1_ex['vs baseline (pp)'])} pp",
+    ],
+    "phases": [
+        f"{audit['counties_full_history']:,} counties", f"{round(100 * audit['share_of_us_housing_units_kept'])}%",
+        f"{audit['counties_with_interpolation']} counties had gaps", f"{audit['months_interpolated']:,} months in all",
+        f"median 12-month growth RMSE of {coh.loc['Metro (2+ counties)', 'median_rmse_12m_pp']:.2f} pp",
+        f"States track it at {coh.loc['State', 'median_rmse_12m_pp']:.2f} pp",
+        f"{f1(lead02.loc[('momentum', 'Metro', 12), 'rmse_pp'])} pp against {f1(lead02.loc[('naive', 'Metro', 12), 'rmse_pp'])} pp",
+        f"{f1(reg02.loc[('momentum', 'Rate shock'), 'rmse_pp'])} pp in the 2022-23 rate shock",
+        f"{f1(final.loc[('Metro', 12), chosen])} pp, {metro_skill} below momentum",
+        f"falls from {f1(rs_mom)} to {f1(rs_ch)} pp", f"({f1(boom_ch)} vs {f1(boom_mom)} pp)",
+        f"misses by {f1(scores.loc[(chosen, 'National', 12), 'rmse_pp'])} pp, against "
+        f"{f1(scores.loc[('combo', 'National', 12), 'rmse_pp'])} pp",
+        f"cover {cov80} of metro outcomes", f"95% ranges cover {cov95}",
+        f"({f1(zf['us_ours_pct'])}%), against Zillow's own {f1(zf['us_zillow_pct'])}%",
+        f"Across {zf['metros_compared']} metros", f"(correlation {zf['correlation']:.2f})",
+        f"median {f1(zf['median_gap_pp'])} pp higher", shock_range, dollars, f"Las Vegas {f1(hit['Las Vegas, NV'])} pp",
+        f"{falls['metros_of_50_falling']} of 50 metros falling",
     ],
     "nb03": [rs_cut.replace(" to ", " pp to ", 1), f"{metro_skill} lower", f"about {cov80} of metro"],
     "nb04": [shock_range.replace(" to ", "-"), by_metro("Las Vegas, NV"), by_metro("Phoenix, AZ"), by_metro("Pittsburgh, PA"),

@@ -1,7 +1,7 @@
 # Hierarchical home-value forecasting: county to nation, coherent at every level
 
 > **Decision memo:** [where to limit housing exposure over the next 12 months](reports/decision_memo.md) ·
-> **Model card:** [MODEL_CARD.md](MODEL_CARD.md) · Data: Zillow release through September 2026.
+> **Model card:** [MODEL_CARD.md](MODEL_CARD.md) · **[Phase by phase](docs/PHASES.md)** · Data: Zillow release through September 2026.
 
 **Question.** Where will US home values go over the next 1 to 12 months, for the nation, every
 state, every metro and every county, so that the numbers agree with each other? And what happens
@@ -110,6 +110,7 @@ pytest -q                            # runs on synthetic data, as CI does
 ## Repository layout
 
 ```
+docs/PHASES.md    how the project was built, phase by phase, with the review
 src/housing/      config, ingest, hierarchy, panel build, checks, backtest, models, reconcile,
                   pipeline, synthetic data, plots
 scripts/          download_data.py, build_data.py, build_notebooks.py
