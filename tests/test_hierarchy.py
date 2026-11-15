@@ -34,6 +34,7 @@ def test_panel_is_balanced_from_start(built):
     c = panel.load_counties()
     assert c.groupby("fips")["date"].count().nunique() == 1
     assert built["counties_full_history"] < built["counties_in_zillow"]   # late starters dropped
+    assert built["months_interpolated"] > 0                                # short holes filled
 
 
 def test_level_of():

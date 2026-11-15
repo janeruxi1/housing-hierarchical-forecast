@@ -76,7 +76,8 @@ STATES = {
 FRED_STATE_UNEMP = {f"{abbr}UR": name for abbr, name in STATES.values()}
 
 # --- Modelling choices ------------------------------------------------------------------------
-START = "2005-01-31"          # first month of the balanced county panel (keeps the 2006-11 bust in sample)
+START = "2008-01-31"          # first month of the balanced county panel: keeps the 2008-11 bust in training
+MAX_GAP = 6                   # months: longest hole inside a county series that is interpolated
 HORIZONS = (1, 3, 6, 12)      # months ahead, as Zillow's ZHVF (1, 3 and 12)
 
 

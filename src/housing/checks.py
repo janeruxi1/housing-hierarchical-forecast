@@ -26,13 +26,18 @@ def published_ids(pub: pd.DataFrame) -> pd.DataFrame:
     return p[p["unique_id"] != "?"]
 
 
-def coherence_gap(Y: pd.DataFrame, pub: pd.DataFrame, coverage: pd.DataFrame, min_coverage: float = 0.95,
-                  since: str = "2005-01-31") -> pd.DataFrame:
-    """Per node with >= min_coverage of its housing units in our panel: level gap and growth agreement."""
+def coherence_gap(Y: pd.DataFrame, pub: pd.DataFrame, coverage: pd.DataFrame, nodes: pd.DataFrame,
+                  min_coverage: float = 0.95, since: str = "2008-01-31") -> pd.DataFrame:
+    """Level gap and growth agreement, per node with >= min_coverage of its housing units in the panel.
+
+    The nation is always included, whatever its coverage, and `n_counties` flags single-county
+    metros, where the rebuilt series is Zillow's own county series and agreement is automatic.
+    """
     ours = Y[["unique_id", "ds", "typical_value"]].rename(columns={"ds": "date"})
     theirs = published_ids(pub)[["unique_id", "date", "zhvi"]]
     m = ours.merge(theirs, on=["unique_id", "date"]).merge(coverage, on="unique_id")
-    m = m[(m["hu_coverage"] >= min_coverage) & (m["date"] >= since)].sort_values(["unique_id", "date"])
+    m = m[((m["hu_coverage"] >= min_coverage) | (m["unique_id"] == "US")) & (m["date"] >= since)]
+    m = m.sort_values(["unique_id", "date"])
     m["g_ours"] = m.groupby("unique_id")["typical_value"].transform(lambda s: np.log(s).diff())
     m["g_theirs"] = m.groupby("unique_id")["zhvi"].transform(lambda s: np.log(s).diff())
     m["g12_ours"] = m.groupby("unique_id")["typical_value"].transform(lambda s: np.log(s).diff(12))
@@ -52,4 +57,6 @@ def coherence_gap(Y: pd.DataFrame, pub: pd.DataFrame, coverage: pd.DataFrame, mi
 
     out = m.groupby("unique_id").apply(per_node, include_groups=False).reset_index()
     out.insert(1, "level", level_of(out["unique_id"]))
+    counts = pd.concat([nodes[lv].value_counts() for lv in ("State", "Metro")])
+    out.insert(2, "n_counties", out["unique_id"].map(counts).fillna(len(nodes)).astype(int))
     return out

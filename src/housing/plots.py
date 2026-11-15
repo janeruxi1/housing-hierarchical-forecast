@@ -23,10 +23,10 @@ def style() -> None:
 def shade_regimes(ax) -> None:
     import pandas as pd
 
-    for a, b, label in REGIMES:
+    for i, (a, b, label) in enumerate(REGIMES):
         ax.axvspan(pd.Timestamp(a), pd.Timestamp(b), color=COLORS["light"], alpha=0.5, lw=0)
-        ax.text(pd.Timestamp(a), 1.0, f" {label}", transform=ax.get_xaxis_transform(), va="top", fontsize=8,
-                color=COLORS["grey"])
+        ax.text(pd.Timestamp(a), 1.0 - 0.07 * (i % 2), f" {label}", transform=ax.get_xaxis_transform(), va="top",
+                fontsize=8, color=COLORS["grey"])
 
 
 def save(fig, name: str) -> None:

@@ -64,9 +64,24 @@ def load_zhvf(raw: Path) -> pd.DataFrame:
 
 
 def norm_name(s: str) -> str:
-    """'Doña Ana County' -> 'dona ana county'; 'St. Louis city' -> 'st louis city'."""
-    s = unicodedata.normalize("NFKD", str(s)).encode("ascii", "ignore").decode()
-    return re.sub(r"[^a-z0-9 ]", "", s.lower().replace("-", " ")).strip()
+    """Normalise a county name for joining Zillow to Census.
+
+    Handles the spellings that differ between the two sources: accents ('Doña Ana'), 'Saint' vs
+    'St.', spacing ('De Kalb' vs 'DeKalb', 'La Salle' vs 'LaSalle') and apostrophes ("O'Brien").
+    Key: lower case, no spaces or punctuation, e.g. 'Saint Louis County' -> 'stlouiscounty'.
+    """
+    s = unicodedata.normalize("NFKD", str(s)).encode("ascii", "ignore").decode().lower()
+    s = re.sub(r"\bsainte\b", "ste", s)
+    s = re.sub(r"\bsaint\b", "st", s)
+    return re.sub(r"[^a-z0-9]", "", s)
+
+
+AREA_SUFFIXES = r"(city and borough|census area|municipality|borough|county|parish)$"
+
+
+def short_key(key: str) -> str:
+    """Key without the area type, for a fallback join ('Anchorage Borough' vs 'Anchorage Municipality')."""
+    return re.sub(AREA_SUFFIXES.replace(" ", ""), "", key)
 
 
 def load_housing_units(raw: Path) -> pd.DataFrame:

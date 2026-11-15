@@ -77,8 +77,10 @@ def write_raw(raw: Path, seed: int = 0) -> None:
                 name = f"{['Pine', 'Cedar', 'Lake', 'River', 'Hill', 'Valley', 'Mesa'][k % 7]} {k} County"
                 g = metro_g + pd.Series(rng.normal(0, 0.001, n)).ewm(alpha=0.2).mean().to_numpy()
                 level = rng.uniform(1.2e5, 4.5e5) * np.exp(np.cumsum(g))
-                start = 0 if k % 6 else 70  # a few counties only start in 2005-11, like thin rural ZHVI
+                start = 0 if k % 6 else 130  # a few counties only start in 2010-11, like thin rural ZHVI
                 level[:start] = np.nan
+                if k % 5 == 0:
+                    level[150:152] = np.nan  # a short hole, as in ~430 real counties
                 units = int(rng.uniform(8e3, 6e5) if metro else rng.uniform(3e3, 4e4))
                 counties.append(dict(RegionID=str(1000 + k), SizeRank=k, RegionName=name, RegionType="county",
                                      StateName=abbr, State=abbr, Metro=metro or None,

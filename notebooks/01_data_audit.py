@@ -22,7 +22,7 @@
 # | | |
 # |---|---|
 # | **Question** | Is a county-level, housing-unit-weighted panel a faithful base for forecasts at every level? |
-# | **Answer** | _Filled in after the first run on the real data._ |
+# | **Answer** | Yes for states and metros, with one caveat for the nation. 1,371 counties with a full history since 2008 hold 84% of US homes. Rebuilt multi-county metros track Zillow's own growth closely (median correlation 0.997; 12-month growth RMSE 0.29 pp), and so do states (0.34 pp). The panel leaves out mostly small rural counties, so its national typical value sits about 25% above Zillow's, and its national 12-month growth differs by 1.2 pp RMSE. Forecasts here are for the homes in the panel, not for Zillow's national index. Outlier: New York State (growth correlation 0.74). |
 # | **Next** | Notebook 02 sets up baselines and the rolling backtest. |
 
 # %%
@@ -94,7 +94,9 @@ pd.Series(audit["unmatched_counties_by_state"], name="unmatched counties").to_fr
 # %% [markdown]
 # ## 3. Coherence gap: rebuilt series vs Zillow's published ones
 #
-# Compared only for nodes where the panel holds at least 95% of the housing units. Three numbers per node:
+# Compared for the nation and for nodes where the panel holds at least 95% of the housing units.
+# Metros made of a single county are listed separately: there the rebuilt series *is* Zillow's
+# county series, so agreement is automatic and says nothing. Three numbers per node:
 # * **level gap**: our typical value vs Zillow's, last month (expected to differ: unit vs value weights);
 # * **growth correlation** of month-on-month changes;
 # * **growth RMSE** in percentage points, monthly and year-on-year. This is the error we would
@@ -102,15 +104,17 @@ pd.Series(audit["unmatched_counties_by_state"], name="unmatched counties").to_fr
 #   forecast errors against.
 
 # %%
-gap = checks.coherence_gap(Y, pub, coverage)
+gap = checks.coherence_gap(Y, pub, coverage, nodes)
 write_metrics("01_coherence_gap", gap)
-summary = gap.groupby("level").agg(
+gap["group"] = np.where((gap["level"] == "Metro") & (gap["n_counties"] == 1), "Metro (1 county)",
+                        np.where(gap["level"] == "Metro", "Metro (2+ counties)", gap["level"]))
+summary = gap.groupby("group").agg(
     nodes=("unique_id", "size"),
     median_level_gap_pct=("level_gap_pct_last", "median"),
     median_growth_corr=("growth_corr_1m", "median"),
     median_rmse_1m_pp=("growth_rmse_1m_pp", "median"),
     median_rmse_12m_pp=("growth_rmse_12m_pp", "median"),
-).reindex(["National", "State", "Metro"]).dropna(how="all")
+).reindex(["National", "State", "Metro (2+ counties)", "Metro (1 county)"]).dropna(how="all")
 write_metrics("01_coherence_summary", summary.reset_index())
 summary.round(3)
 
@@ -135,14 +139,20 @@ fig.tight_layout()
 save(fig, "01_us_rebuilt_vs_published")
 
 # %%
-metros = gap[gap["level"] == "Metro"]
+metros = gap[gap["group"] == "Metro (2+ counties)"]
 fig, ax = plt.subplots(figsize=(6, 3))
 ax.hist(metros["growth_rmse_12m_pp"], bins=30, color=COLORS["ours"])
 ax.set_xlabel("Year-on-year growth RMSE vs Zillow (pp)")
 ax.set_ylabel("Metros")
-ax.set_title("How closely each rebuilt metro tracks Zillow's")
+ax.set_title("How closely each rebuilt multi-county metro tracks Zillow's")
 save(fig, "01_metro_gap_hist")
 metros.sort_values("growth_rmse_12m_pp", ascending=False).head(10).round(3)
+
+# %% [markdown]
+# **Reading the US figure.** The level gap is mostly composition: the counties without a full
+# history since 2008 are mostly small and rural, where homes are cheaper, so the panel's
+# "typical home" is pricier than the nation's. Growth, which is what gets forecast, lines up much
+# more closely, apart from 2013-14, when the coastal metros that dominate the panel recovered faster.
 
 # %% [markdown]
 # ## 4. What is being forecast

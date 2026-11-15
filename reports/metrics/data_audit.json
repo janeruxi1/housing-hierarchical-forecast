@@ -1,0 +1,21 @@
+{
+  "zhvi_last_month": "2026-09",
+  "counties_in_zillow": 3071,
+  "counties_matched_by_fallback": 5,
+  "counties_matched_to_housing_units": 3062,
+  "unmatched_counties_by_state": {
+    "CT": 8,
+    "ND": 1
+  },
+  "months_interpolated": 1043,
+  "counties_with_interpolation": 433,
+  "counties_full_history": 1371,
+  "months": 225,
+  "share_of_us_housing_units_kept": 0.8392,
+  "nodes_by_level": {
+    "National": 1,
+    "State": 49,
+    "Metro": 605,
+    "County": 1371
+  }
+}

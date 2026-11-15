@@ -1,0 +1,5 @@
+group,nodes,median_level_gap_pct,median_growth_corr,median_rmse_1m_pp,median_rmse_12m_pp
+National,1,24.6099,0.977703,0.13424,1.1672
+State,13,2.60479,0.996053,0.0482718,0.336244
+Metro (2+ counties),112,0.0367273,0.99691,0.0498684,0.285083
+Metro (1 county),327,0.000622942,0.999998,0.0013908,0.0108847

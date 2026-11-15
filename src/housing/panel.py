@@ -4,10 +4,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from housing import ingest
-from housing.config import FRED_NATIONAL, FRED_STATE_UNEMP, START, data_dirs, metrics_dir
+from housing.config import FRED_NATIONAL, FRED_STATE_UNEMP, MAX_GAP, START, data_dirs, metrics_dir
 from housing.hierarchy import aggregate, node_table, summing_matrix
 
 
@@ -28,13 +29,31 @@ def build(raw: Path, out: Path) -> dict:
     hu = ingest.load_housing_units(raw)
     keys = cz.drop_duplicates("fips")[["fips", "key", "state"]]
     matched = keys.merge(hu[["key", "hu", "hu_2020"]], on="key", how="left")
+    # Fallback: same name with the area type dropped, when that is unique within the state
+    hu_short = hu.assign(skey=hu["key"].map(ingest.short_key))
+    hu_short = hu_short[~hu_short["skey"].duplicated(keep=False)].set_index("skey")
+    miss = matched["hu"].isna()
+    sk = matched.loc[miss, "key"].map(ingest.short_key)
+    for col in ("hu", "hu_2020"):
+        matched.loc[miss, col] = sk.map(hu_short[col]).to_numpy()
+    audit["counties_matched_by_fallback"] = int((miss & matched["hu"].notna()).sum())
     audit["counties_matched_to_housing_units"] = int(matched["hu"].notna().sum())
     audit["unmatched_counties_by_state"] = (
         matched[matched["hu"].isna()].groupby("state").size().sort_values(ascending=False).head(10).to_dict()
     )
     cz = cz.merge(matched[["fips", "hu", "hu_2020"]], on="fips", how="inner").dropna(subset=["hu"])
 
-    # 3. Balanced panel: counties with a value every month from START to the last month
+    # 3. Short gaps inside a county's history (Zillow leaves 1-5 month holes in some thin counties)
+    #    are filled by log-linear interpolation; nothing is extrapolated before a series starts.
+    wide = np.log(cz.pivot(index="date", columns="fips", values="zhvi"))
+    filled = wide.interpolate(limit=MAX_GAP, limit_area="inside")
+    audit["months_interpolated"] = int(filled.notna().sum().sum() - wide.notna().sum().sum())
+    audit["counties_with_interpolation"] = int((filled.notna().sum() > wide.notna().sum()).sum())
+    long = np.exp(filled).stack().rename("zhvi").reset_index()
+    meta = cz.drop_duplicates("fips").drop(columns=["date", "zhvi"])
+    cz = long.merge(meta, on="fips")
+
+    # 4. Balanced panel: counties with a value every month from START to the last month
     cz = cz[cz["date"] >= START]
     n_months = cz["date"].nunique()
     full = cz.groupby("fips")["zhvi"].count().eq(n_months)
@@ -55,7 +74,7 @@ def build(raw: Path, out: Path) -> dict:
     panel = panel[["fips", "county", "state", "metro", "date", "zhvi", "hu", "value"]].sort_values(["fips", "date"])
     panel.to_parquet(out / "county_month.parquet", index=False)
 
-    # 4. Hierarchy and the aggregated series (y = total $ value; hu = housing units per node)
+    # 5. Hierarchy and the aggregated series (y = total $ value; hu = housing units per node)
     nodes = node_table(panel)
     S, tags = summing_matrix(nodes)
     bottom = panel.assign(unique_id="CTY:" + panel["fips"], ds=panel["date"])
@@ -68,13 +87,13 @@ def build(raw: Path, out: Path) -> dict:
     nodes.to_parquet(out / "nodes.parquet", index=False)
     audit["nodes_by_level"] = {k: int(len(v)) for k, v in tags.items()}
 
-    # 5. Zillow's own published series (for the coherence check) and its forecast (benchmark)
+    # 6. Zillow's own published series (for the coherence check) and its forecast (benchmark)
     pub = pd.concat([ingest.load_published(raw, "zhvi_metro.csv"), ingest.load_published(raw, "zhvi_state.csv")])
     pub.to_parquet(out / "zillow_published.parquet", index=False)
     if (raw / "zhvf_metro.csv").exists():
         ingest.load_zhvf(raw).to_parquet(out / "zhvf_metro.parquet", index=False)
 
-    # 6. Drivers: national macro series and state unemployment, monthly
+    # 7. Drivers: national macro series and state unemployment, monthly
     macro = pd.concat([ingest.load_fred(raw, s) for s in FRED_NATIONAL], axis=1)
     macro.index.name = "date"
     macro.reset_index().to_parquet(out / "macro_month.parquet", index=False)

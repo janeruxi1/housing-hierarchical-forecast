@@ -30,4 +30,4 @@ jobs:
           python scripts/build_data.py > /dev/null
           for nb in notebooks/[0-9]*.py; do echo "== $nb"; python "$nb" > /dev/null; done
       - name: Recorded metrics are untouched by synthetic runs
-        run: git diff --exit-code reports/metrics
+        run: git diff --exit-code -- reports/metrics

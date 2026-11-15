@@ -12,9 +12,19 @@ def test_metro_short_matches_zillow_style():
     assert ingest.metro_short(np.nan) == ""
 
 
-def test_norm_name_handles_accents_and_punctuation():
-    assert ingest.norm_name("Doña Ana County") == "dona ana county"
-    assert ingest.norm_name("St. Louis city") == ingest.norm_name("St Louis City")
+def test_norm_name_joins_zillow_and_census_spellings():
+    pairs = [("Doña Ana County", "Dona Ana County"), ("Saint Louis County", "St. Louis County"),
+             ("De Kalb County", "DeKalb County"), ("La Salle County", "LaSalle County"),
+             ("O Brien County", "O'Brien County"), ("Sainte Genevieve County", "Ste. Genevieve County")]
+    for zillow, census in pairs:
+        assert ingest.norm_name(zillow) == ingest.norm_name(census)
+    assert ingest.norm_name("St. Louis city") != ingest.norm_name("St. Louis County")
+
+
+def test_short_key_fallback_for_alaska():
+    assert ingest.short_key(ingest.norm_name("Anchorage Borough")) == ingest.short_key(
+        ingest.norm_name("Anchorage Municipality"))
+    assert ingest.short_key(ingest.norm_name("Juneau City and Borough")) == "juneau"
 
 
 def test_read_zillow_wide_is_long_and_month_end(tmp_path):

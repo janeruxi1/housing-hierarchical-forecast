@@ -1,7 +1,7 @@
 # Hierarchical home-value forecasting: county to nation, coherent at every level
 
-> **Status: in progress.** Data pipeline, hierarchy and data audit are built and tested; models,
-> backtests and scenarios are next. Results below are filled in as each stage runs on the real data.
+> **Status: in progress.** Data audit and baseline backtest are done on the real data (Zillow
+> release through September 2026); models, reconciliation and scenarios are next.
 
 **Question.** Where will US home values go over the next 1 to 12 months, for the nation, every
 state, every metro and every county, so that the numbers agree with each other? And what happens
@@ -39,10 +39,21 @@ download ─> county panel (balanced from 2005) ─> hierarchy: US > state / met
 
 | Stage | Notebook | Status |
 |---|---|---|
-| Data audit and coherence check | [01](notebooks/01_data_audit.ipynb) | built, awaiting real-data run |
-| Baselines and backtest harness | 02 | next |
+| Data audit and coherence check | [01](notebooks/01_data_audit.ipynb) | done |
+| Baselines and backtest harness | [02](notebooks/02_baselines_backtest.ipynb) | done |
 | Models and reconciliation | 03 | planned |
 | Scenarios | 04 | planned |
+
+## Results so far
+
+* **The panel.** 1,371 counties with a full monthly history since 2008 hold 84% of US homes and roll up to
+  49 states and 605 metro groups. Rebuilt multi-county metros track Zillow's published growth closely
+  (median 12-month growth RMSE 0.29 pp).
+* **The bar to beat.** Of four no-model rules, *momentum* (last 12 months' growth continues) is best: metro
+  12-month RMSE 5.9 pp vs 7.6 pp for "no change", direction right 84% of the time. It fails at turning
+  points: 10.7 pp in the 2022-23 rate shock, worse than "no change" (8.1 pp).
+
+![Metro 12-month errors over time](reports/figures/02_metro_error_over_time.png)
 
 ## Run it
 
