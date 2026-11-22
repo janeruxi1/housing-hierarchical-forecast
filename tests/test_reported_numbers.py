@@ -19,7 +19,7 @@ def norm(text: str) -> str:
 
 
 DOCS = {name: norm((ROOT / path).read_text(encoding="utf-8"))
-        for name, path in [("readme", "README.md"), ("memo", "reports/decision_memo.md"),
+        for name, path in [("readme", "README.md"), ("results", "docs/results.md"), ("memo", "reports/decision_memo.md"),
                            ("card", "MODEL_CARD.md"), ("nb03", "notebooks/03_models_reconciliation.py"),
                            ("nb04", "notebooks/04_scenarios.py"), ("phases", "docs/PHASES.md")]}
 
@@ -150,9 +150,27 @@ CLAIMS = {
 }
 
 
+# The README's detail lives in docs/results.md: README claims may appear in either.
+DOCS["readme"] = DOCS["readme"] + " " + DOCS.pop("results")
+
+README_HEADLINES = [
+    f"{metro_skill} below momentum", rs_cut, shock_range, dollars, by_metro("Las Vegas, NV"),
+    by_metro("Pittsburgh, PA"), f"expects {f1(zf['us_ours_pct'])}% national growth against Zillow's {f1(zf['us_zillow_pct'])}%",
+    f"(correlation {zf['correlation']:.2f} across {zf['metros_compared']} metros)",
+    f"{falls['metros_of_50_falling']} of the 50 largest metros lose value", f"covered only {cov80} of metro outcomes",
+    f"from {f1(r1_full['vs baseline (pp)'])} to {f1(r1_ex['vs baseline (pp)'])} pp",
+]
+
+
 @pytest.mark.parametrize("doc,claim", [(d, s) for d, claims in CLAIMS.items() for s in claims])
 def test_document_quotes_recorded_number(doc, claim):
     assert claim in DOCS[doc], f"{doc}: expected to find {claim!r}"
+
+
+@pytest.mark.parametrize("claim", README_HEADLINES)
+def test_readme_headline_quotes_recorded_number(claim):
+    """The front page itself, not only docs/results.md, carries the headline numbers."""
+    assert claim in norm((ROOT / "README.md").read_text(encoding="utf-8")), claim
 
 
 def test_memo_lists_the_ten_most_exposed_metros_in_order():

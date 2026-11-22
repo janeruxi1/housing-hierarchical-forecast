@@ -1,123 +1,103 @@
-# Hierarchical home-value forecasting: county to nation, coherent at every level
+# Where Are US Home Values Heading, and What Would a Rate Shock Do?
 
-> **Decision memo:** [where to limit housing exposure over the next 12 months](reports/decision_memo.md) ·
-> **Model card:** [MODEL_CARD.md](MODEL_CARD.md) · **[Phase by phase](docs/PHASES.md)** · Data: Zillow release through September 2026.
+[![CI](https://github.com/janeruxi1/housing-hierarchical-forecast/actions/workflows/ci.yml/badge.svg)](https://github.com/janeruxi1/housing-hierarchical-forecast/actions)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue)
+[![Live demo](https://img.shields.io/badge/Streamlit-Live%20demo-FF4B4B?logo=streamlit)](https://janeruxi1-housing-hierarchical-forecast.streamlit.app/)
 
-**Question.** Where will US home values go over the next 1 to 12 months, for the nation, every
-state, every metro and every county, so that the numbers agree with each other? And what happens
-to that outlook if mortgage rates rise a point or a recession hits?
+**[Decision memo](reports/decision_memo.md)** · **[Live demo](https://janeruxi1-housing-hierarchical-forecast.streamlit.app/)** · **[Full results](docs/results.md)** · **[Model card](MODEL_CARD.md)** · **[Phase by phase](docs/PHASES.md)**
 
-**Why it is not just "forecast each series".**
-* **Forecasts must add up.** A lender or insurer that plans by county but reports by state needs
-  county forecasts that sum to the state forecast. Forecasting each level on its own does not give
-  that; *reconciliation* does. Here the simplest version, adding counties up, proved as
-  accurate as the MinTrace variants.
-* **Zillow's index is an average, not a total.** ZHVI is a value-weighted mean, so county values do not
-  sum to a metro value. This project forecasts the *value of the housing stock* (ZHVI x housing
-  units) instead, which does add up, and converts back to a typical home value at the end.
-* **There is an external yardstick.** Zillow publishes the accuracy of its own metro forecast
-  (RMSE of monthly growth at 1, 3 and 6 months), so the backtest can be compared with it.
+A mortgage lender, mortgage insurer or home-buying investor sets limits by state and by metro, and needs
+to know where home values are heading over the next year and how hard a rise in mortgage rates would hit
+each place. This project forecasts home values 1 to 12 months ahead for the nation, 49 states and 605 metro
+groups, built up from 1,371 counties (84% of US homes) so that every level adds up, then stress-tests the
+forecast. Data: Zillow's home value index through September 2026, Census housing units, FRED rates. CI
+checks every number below against the recorded results.
 
-## Data (all public, free)
+## Key results
 
-| Source | Used for |
-|---|---|
-| [Zillow Research](https://www.zillow.com/research/data/): ZHVI by county, metro, state, nation (middle tier, smoothed, seasonally adjusted); ZHVF forecast | target; Zillow's published series and forecast as benchmarks |
-| Census Population Estimates, Vintage 2025 | county housing units (weights), population and net domestic migration |
-| FRED | 30-year mortgage rate, US and state unemployment, CPI |
+- **It beats the rule of thumb where it matters.** "The last 12 months' growth continues" (momentum) is the
+  usual shortcut. Over 47 quarterly forecast dates, 2014-2025, the chosen forecast's metro 12-month error is
+  14% below momentum, and in the 2022-23 rate shock it falls from 10.6 to 6.0 pp, 44% lower.
+- **A rate rise is the main 12-month risk, and it is quoted as a range.** A sudden 1-point rise lowers
+  national growth by 0.8 to 2.1 pp ($0.45 to $1.2 trillion of housing value). High-beta Sun Belt metros take
+  about four times the hit of Rust Belt ones (Las Vegas -4.2 pp, Pittsburgh -1.0 pp).
+- **Same ranking as Zillow, higher level.** This model expects 3.2% national growth against Zillow's 1.1%.
+  The two rank metros alike (correlation 0.79 across 439 metros), so the memo budgets on Zillow's level and
+  uses this model for ranking and stress: with a 2-point rise, 45 of the 50 largest metros lose value.
+- **For a risk committee:** tighten limits in the ten most rate-sensitive large metros, plan on the 95%
+  range (the 80% range covered only 73% of metro outcomes), and do not use the model for a recession.
 
-Raw files are not committed. `scripts/download_data.py` fetches them and records URL, date and
-SHA-256 in `data/raw/manifest.json`. Data from Zillow is used with attribution.
+![Under a 2-point rate rise, 45 of the 50 largest metros lose value](reports/figures/00_readme_hero.png)
 
-## Approach
+*Grey: Zillow's own 12-month forecast for each of the 50 largest metros. Orange or green: the same forecast
+after this model's 2-point rate shock for that metro, scaled by how hard it swings with the national cycle.
+Drawn from the recorded results by `scripts/make_readme_figure.py`.*
 
-```
-download ─> county panel (balanced from 2008) ─> hierarchy: US > state / metro > county (grouped)
-        ─> base forecasts (baselines, ARIMA, panel regression, Zillow-style, combination)
-        ─> reconcile (bottom-up, 3 MinTrace variants) ─> rolling-origin backtest at 1/3/6/12 months
-        ─> forecast from today + rate scenarios x metro exposure ─> decision memo
-```
+## How it works
 
-| Stage | Notebook | Status |
+| Step | Method | Where |
 |---|---|---|
-| Data audit and coherence check | [01](notebooks/01_data_audit.ipynb) | done |
-| Baselines and backtest harness | [02](notebooks/02_baselines_backtest.ipynb) | done |
-| Models and reconciliation | [03](notebooks/03_models_reconciliation.ipynb) | done |
-| Forecast from today and scenarios | [04](notebooks/04_scenarios.ipynb) | done |
+| Make it add up | County panel balanced from 2008; housing-stock value (index x Census housing units) summed to metros, states and the nation; rebuilt series checked against Zillow's published ones | [01](notebooks/01_data_audit.ipynb) |
+| Bar to beat | Rolling-origin backtest harness at 1/3/6/12 months; four no-model rules (no change, drift, momentum, long-run) | [02](notebooks/02_baselines_backtest.ipynb) |
+| Models and reconciliation | Per-place ARIMA(2,1,0), a direct panel regression that reads mortgage rates and unemployment, a Zillow-style model and their combination; bottom-up vs three MinTrace variants; time-safe conformal ranges | [03](notebooks/03_models_reconciliation.ipynb) |
+| Forecast and stress | Forecast from September 2026; comparison with Zillow's published forecast; rate and unemployment scenarios x each county's beta, added up | [04](notebooks/04_scenarios.ipynb) |
+| Demo | Any state, metro or county, and the rate-shock sliders, on a derived extract that CI checks against the records | [`app/`](app/streamlit_app.py) |
 
-## Results
+![Key results at a glance](reports/figures/00_readme_summary.png)
 
-**Recommendation** ([memo](reports/decision_memo.md)): treat a rise in mortgage rates as the main
-12-month risk and tighten limits in the ten most rate-sensitive large metros. A sudden 1-point rise
-lowers national 12-month growth by 0.8 to 2.1 pp ($0.45 to $1.2 trillion of housing value), and hits
-high-beta Sun Belt metros about four times as hard as Rust Belt and Northeast ones (Las Vegas -4.2 pp,
-Phoenix -3.8 pp, Pittsburgh -1.0 pp).
+*Left: metro 12-month error by period; the gain is at the 2022-23 turn, and no model saw the 2020-22 boom.
+Middle: this model against Zillow's forecast for 439 metros. Right: the US rate shock with and without the
+pandemic years in training, the range the memo quotes.*
 
-**Accuracy.** RMSE of 12-month growth over 47 quarterly forecast dates, 2014-2025:
+## Data
 
-| Level | Chosen forecast | Momentum | No change |
-|---|---|---|---|
-| Nation | 4.3 pp | 5.3 pp | 7.0 pp |
-| States | 4.6 pp | 5.6 pp | 7.4 pp |
-| Metros | 5.1 pp | 5.9 pp | 7.8 pp |
-| Counties | 5.2 pp | 6.1 pp | 7.9 pp |
+[Zillow Research](https://www.zillow.com/research/data/) home value index (ZHVI, middle tier, smoothed and
+seasonally adjusted) by county, metro, state and nation, and Zillow's forecast (ZHVF), used with
+attribution; Census Population Estimates (Vintage 2025) for housing units; FRED for the 30-year mortgage rate,
+unemployment and CPI. Raw files are not committed: `scripts/download_data.py` fetches them and records each
+file's URL, date and SHA-256. The demo reads only derived results (growth rates, forecasts, scenario
+responses), never Zillow's county series.
 
-* **The panel.** 1,371 counties with a full monthly history since 2008 hold 84% of US homes and roll up to
-  49 states and 605 metro groups. Rebuilt multi-county metros track Zillow's published growth closely
-  (median 12-month growth RMSE 0.29 pp).
-* **The bar to beat.** Of four no-model rules, *momentum* (the last 12 months' growth continues) is
-  best: metro 12-month RMSE 5.9 pp vs 7.6 pp for "no change". It fails at turning points: 10.7 pp in
-  the 2022-23 rate shock.
-* **The chosen forecast.** The equal-weight average of a per-place ARIMA(2,1,0) and a rates-aware
-  direct panel regression, made coherent bottom-up. Its metro 12-month error is 14% below momentum overall.
-  In the 2022-23 rate shock it falls from 10.6 to 6.0 pp, 44% lower. In the 2020-22 boom it was slightly
-  worse (8.0 vs 7.4 pp).
-* **Reconciliation.** Coherence costs almost nothing with bottom-up or variance-weighted MinTrace.
-  MinTrace weighted only by tree shape (wls_struct) fails badly in dollar terms. Full-covariance
-  MinTrace helps weak base models but adds noise to strong ones.
-* **Uncertainty.** Time-safe conformal ranges are too narrow: nominal 80% ranges cover 73% of metro
-  outcomes at 12 months, because misses bunch up at turning points.
-* **The outlook from September 2026.** About 3% national growth over 12 months (3.2%), against
-  Zillow's 1.1%. The two rank metros alike (correlation 0.79 across 439 metros), but this model sits a
-  median 1.2 pp higher. The memo takes the level from Zillow and the ranking and stress from this model.
+## Limits
 
-![Rate shock exposure by metro](reports/figures/04_metro_exposure.png)
+- **The rate response leans on one episode.** Refitted without 2020-21 the 1-point shock falls from -2.1
+  to -0.8 pp, so the memo quotes the range. A 2008-style recession is outside what the model can represent.
+- **Ranges run narrow at turning points**, and Zillow restates its history, so the backtest uses today's
+  series rather than what was known at each date.
+- **The level is optimistic** against Zillow, which also sees listings, inventory and demand data.
 
-![Metro 12-month errors over time](reports/figures/02_metro_error_over_time.png)
-
-## Run it
+<details>
+<summary><b>Run it</b></summary>
 
 ```bash
-python -m venv .venv && source .venv/bin/activate     # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-python scripts/download_data.py      # about 60 files, a few minutes
-python scripts/build_data.py         # builds data/processed/ and reports/metrics/data_audit.json
-python scripts/run_models.py         # model + reconciliation backtest, about 2 minutes
-python scripts/build_notebooks.py --execute
-pytest -q                            # runs on synthetic data, as CI does
+pytest -q                                    # synthetic data, as CI does
+python scripts/download_data.py              # real data: about 60 files, a few minutes
+python scripts/build_data.py                 # data/processed/ and reports/metrics/data_audit.json
+python scripts/run_models.py                 # model + reconciliation backtest, about 2 minutes
+python scripts/build_notebooks.py --execute  # notebooks 01-04 on the real data
+python scripts/build_app_data.py             # the demo's extract (app/data/)
+pip install -r app/requirements.txt && streamlit run app/streamlit_app.py
 ```
 
-## Limitations (more in the [model card](MODEL_CARD.md))
-* **The rate response depends on one episode.** Refitted without 2020-21, the 1-point shock falls from
-  -2.1 to -0.8 pp, so the range is quoted. The model cannot represent a 2008-style recession.
-* **Revised history.** Zillow restates ZHVI history (e.g. the January 2023 neural-Zestimate
-  upgrade), so backtests use today's series, not what was known at each forecast date.
-* **No historical Zillow forecasts.** Only the current ZHVF vintage is public, so the comparison with
-  Zillow's own forecast is against its *published accuracy*, plus a forward check of today's vintage.
-* **Fixed weights.** Housing units are held at the latest Census year, so node totals move with prices,
-  not construction.
+</details>
 
-## Repository layout
+<details>
+<summary><b>Repository layout</b></summary>
 
 ```
-docs/PHASES.md    how the project was built, phase by phase, with the review
-src/housing/      config, ingest, hierarchy, panel build, checks, backtest, models, reconcile,
-                  pipeline, synthetic data, plots
-scripts/          download_data.py, build_data.py, build_notebooks.py
-notebooks/        percent-format .py sources and the generated .ipynb
-tests/            pytest on synthetic data
-data/             raw/ and processed/ (not committed), READMEs describe each file
-reports/          figures/ and metrics/ written by the notebooks
+reports/decision_memo.md, MODEL_CARD.md   the recommendation; what the model is and where it fails
+reports/metrics/, reports/figures/        every number and figure, written by the notebooks
+docs/results.md, docs/PHASES.md           full results; the project phase by phase
+notebooks/01-04                           .py sources (run in CI) + executed .ipynb
+src/housing/                              ingest, hierarchy, panel, backtest, models, reconcile, scenarios
+app/                                      the demo and its derived extract (app/data/)
+scripts/, tests/                          download, build, figures; pytest on synthetic data + record checks
+data/                                     raw/ and processed/ (not committed); READMEs describe each file
 ```
 
-MIT licence. Data: Zillow Research (attribution), US Census Bureau, FRED.
+</details>
+
+**Related:** [NYC congestion toll](https://github.com/janeruxi1/nyc-congestion-toll-causal-impact) (another
+forecast counterfactual) · [Driver pay pricing](https://github.com/janeruxi1/ridehail-driver-pay-optimization) ·
+[All projects](https://github.com/janeruxi1)

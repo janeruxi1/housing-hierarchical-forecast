@@ -89,7 +89,7 @@ compares the rebuilt series with Zillow's published ones.
 * The nation is the exception. Its level sits about 25% above Zillow's, because the counties left
   out are mostly small, rural and cheaper.
 
-**Reviewer objection:** "Your national series isn't Zillow's." Correct, and the README says so: the
+**Reviewer objection:** "Your national series isn't Zillow's." Correct, and the README and [full results](results.md) say so: the
 national figure describes the panel's homes, 84% of the US.
 
 ---
@@ -235,10 +235,14 @@ spread, the multiple set from past errors at the same level.
   was removed, because the results here do not support it.
 * *Memory.* The backtest tables (9.9 million rows) were made compact so the analysis fits in 4 GB.
 
+**Added after the review.** A live demo (Streamlit), like the other projects. It reads a small extract of
+derived results (`scripts/build_app_data.py`: growth rates, forecasts, a grid of rate and unemployment
+shocks, backtest errors), never Zillow's county series, and `tests/test_app_data.py` checks the extract
+against the notebook records.
+
 **Left, in order of value.**
-1. A live demo (Streamlit), like the other projects.
-2. A downturn scenario built from historical peak-to-trough losses by metro, in place of the linear
+1. A downturn scenario built from historical peak-to-trough losses by metro, in place of the linear
    recession scenario.
-3. Ranges recalibrated after large recent misses, so that 80% means 80%.
-4. Listings, inventory and days-on-market data, the leading indicators in Zillow's own method, to
+2. Ranges recalibrated after large recent misses, so that 80% means 80%.
+3. Listings, inventory and days-on-market data, the leading indicators in Zillow's own method, to
    close the gap with Zillow's level.

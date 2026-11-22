@@ -18,9 +18,9 @@
       ]
     }
   },
-  "updateContentCommand": "[ -f packages.txt ] && sudo apt update && sudo apt upgrade -y && sudo xargs apt install -y <packages.txt; pip3 install --user -r requirements-lock.txt; pip3 install --user streamlit; HOUSING_SYNTHETIC=1 python scripts/build_data.py > /dev/null; echo '✅ Packages installed; synthetic data built (real data: python scripts/download_data.py)'",
+  "updateContentCommand": "[ -f packages.txt ] && sudo apt update && sudo apt upgrade -y && sudo xargs apt install -y <packages.txt; pip3 install --user -r requirements-lock.txt; pip3 install --user -r app/requirements.txt; HOUSING_SYNTHETIC=1 python scripts/build_data.py > /dev/null; echo '✅ Packages installed; synthetic data built (real data: python scripts/download_data.py)'",
   "postAttachCommand": {
-    "server": "[ -f app/streamlit_app.py ] && streamlit run app/streamlit_app.py --server.enableCORS false --server.enableXsrfProtection false || echo 'No demo app yet: run pytest -q, or the notebooks with HOUSING_SYNTHETIC=1'"
+    "server": "streamlit run app/streamlit_app.py --server.enableCORS false --server.enableXsrfProtection false"
   },
   "portsAttributes": {
     "8501": {
