@@ -1,0 +1,8 @@
+method,test_dates_better_than_momentum
+naive,7
+combo+bottom_up,4
+zillow_style+mint_shrink,2
+autoets,10
+autoarima,5
+prophet,0
+prophet_cr95_flex,1

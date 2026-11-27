@@ -1,0 +1,7 @@
+{
+  "chosen": "zillow_style+mint_shrink",
+  "avg_rmse_pp": 1.9449664959355544,
+  "runner_up": "ar2+bottom_up",
+  "runner_up_avg_rmse_pp": 1.9702638909986372,
+  "selection_dates": 32
+}

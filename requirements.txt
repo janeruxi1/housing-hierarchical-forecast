@@ -5,6 +5,7 @@ pyarrow>=14,<30
 openpyxl>=3.1,<4          # reads the Census housing-unit .xlsx
 requests>=2.31,<3         # scripts/download_data.py
 statsforecast>=2.0,<3
+prophet>=1.1,<2           # challenger in notebook 05
 hierarchicalforecast>=1.2,<2
 utilsforecast>=0.2,<1
 scipy>=1.11,<2            # sparse matrices in the reconciliation

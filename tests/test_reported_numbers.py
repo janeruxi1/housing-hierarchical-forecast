@@ -21,7 +21,8 @@ def norm(text: str) -> str:
 DOCS = {name: norm((ROOT / path).read_text(encoding="utf-8"))
         for name, path in [("readme", "README.md"), ("results", "docs/results.md"), ("memo", "reports/decision_memo.md"),
                            ("card", "MODEL_CARD.md"), ("nb03", "notebooks/03_models_reconciliation.py"),
-                           ("nb04", "notebooks/04_scenarios.py"), ("phases", "docs/PHASES.md")]}
+                           ("nb04", "notebooks/04_scenarios.py"), ("phases", "docs/PHASES.md"),
+                           ("nb05", "notebooks/05_final_test.py")]}
 
 
 def j(name):
@@ -50,6 +51,21 @@ zf = j("04_vs_zillow_forecast")
 expo = c("04_metro_exposure").set_index("metro")      # sorted: most exposed first
 falls = j("04_stress_falls")
 zc = c("03_zillow_comparison").set_index("method")
+
+# Notebook 05: the final test (choose on 2014-2021, score once on 2023-2025) and the challengers
+sel05, v05 = j("05_selection"), j("05_verdict")
+all05 = c("05_all_methods_metro12").set_index("method")
+ch05 = c("05_challengers").query("period == 'test' and level == 'Metro' and h == 12").iloc[0]
+wins05 = c("05_challenger_wins").set_index("method")["test_dates_better_than_momentum"]
+prophet_pick = c("05_prophet_tuning").iloc[0]["method"]
+T_CH, T_MOM = f1(v05["rmse_chosen_pp"]), f1(v05["rmse_reference_pp"])
+T_NAIVE, T_COMBO = f1(all05.loc["naive", "test"]), f1(all05.loc["combo+bottom_up", "test"])
+T_COMBO_WINS = int(all05.loc["combo+bottom_up", "test dates better than momentum"])
+ETS, ARIMA, PROPHET = f1(ch05["autoets"]), f1(ch05["autoarima"]), f1(ch05[prophet_pick])
+CH_ROWS = [f"| {label} | {f1(ch05[m])} pp | {'-' if m == 'momentum' else int(wins05[m])} |" for label, m in [
+    ("AutoETS (damped trend for almost every series)", "autoets"), ("No change", "naive"), ("Momentum", "momentum"),
+    ("combo+bottom_up (this project)", "combo+bottom_up"), ("AutoARIMA", "autoarima"),
+    ("Prophet, tuned on 2014-2021", prophet_pick), ("Prophet, default settings", "prophet")]]
 
 LEVELS = [("National", "Nation"), ("State", "States"), ("Metro", "Metros"), ("County", "Counties")]
 ACCURACY_ROWS = [f"| {label} | {f1(final.loc[(lv, 12), chosen])} pp | {f1(final.loc[(lv, 12), 'momentum'])} pp | "
@@ -95,6 +111,11 @@ CLAIMS = {
         f"correlation {zf['correlation']:.2f} across {zf['metros_compared']} metros",
         f"median {f1(zf['median_gap_pp'])} pp higher",
         f"from {f1(r1_full['vs baseline (pp)'])} to {f1(r1_ex['vs baseline (pp)'])} pp",
+        f"scores {T_CH} pp against momentum's {T_MOM} pp", f"no-change forecast ({T_NAIVE} pp)",
+        f"lowest 12-month error ({ETS} pp, better than momentum on {wins05['autoets']} of 11 dates)",
+        f"AutoARIMA scores {ARIMA} pp", f"Prophet {PROPHET} pp even after tuning",
+        f"{T_CH} pp against momentum's {T_MOM} pp, better on only {v05['wins']} of 11 dates",
+        f"ties momentum ({T_COMBO} pp, better on {T_COMBO_WINS} of 11)", *CH_ROWS,
     ],
     "memo": [
         *ACCURACY_ROWS,
@@ -113,6 +134,7 @@ CLAIMS = {
         f"against {f1(rs_ch)} pp here", f"({f1(boom_ch)} vs {f1(boom_mom)} pp)",
         f"misses by {f1(scores.loc[(chosen, 'National', 12), 'rmse_pp'])} pp, against "
         f"{f1(scores.loc[('combo', 'National', 12), 'rmse_pp'])} pp",
+        f"({T_NAIVE} pp for metros)", f"only ties momentum ({T_COMBO} pp)",
     ],
     "card": [
         *ACCURACY_ROWS,
@@ -126,6 +148,8 @@ CLAIMS = {
         f"expects {f1(zf['us_ours_pct'])}% national growth", f"Zillow's {f1(zf['us_zillow_pct'])}%",
         f"(correlation {zf['correlation']:.2f})", f"median {f1(zf['median_gap_pp'])} pp higher",
         f"from {f1(r1_full['vs baseline (pp)'])} to {f1(r1_ex['vs baseline (pp)'])} pp",
+        f"scores {T_CH} pp at metro 12 months against momentum's {T_MOM} pp", f"\"no change\" ({T_NAIVE} pp)",
+        f"ties momentum ({T_COMBO} pp)", f"AutoETS {ETS} pp", f"AutoARIMA {ARIMA} pp", f"Prophet {PROPHET} pp",
     ],
     "phases": [
         f"{audit['counties_full_history']:,} counties", f"{round(100 * audit['share_of_us_housing_units_kept'])}%",
@@ -143,7 +167,15 @@ CLAIMS = {
         f"Across {zf['metros_compared']} metros", f"(correlation {zf['correlation']:.2f})",
         f"median {f1(zf['median_gap_pp'])} pp higher", shock_range, dollars, f"Las Vegas {f1(hit['Las Vegas, NV'])} pp",
         f"{falls['metros_of_50_falling']} of 50 metros falling",
+        f"fails: {T_CH} pp against momentum's {T_MOM} pp, better on {v05['wins']} of 11 dates",
+        f"\"no change\" is best ({T_NAIVE} pp)",
+        f"({ETS} pp on the 50 largest metros, better than momentum on {wins05['autoets']} of 11)",
+        f"even after tuning ({PROPHET} pp)",
     ],
+    "nb05": [f"{T_CH} pp metro 12-month error against {T_MOM} pp for momentum, better on only {v05['wins']} of "
+             f"{v05['test_dates']}", f"no-change forecast ({T_NAIVE} pp)", f"({T_COMBO} pp, {T_COMBO_WINS} of 11 dates)",
+             f"({ETS} pp on the 50 largest metros, better than momentum on {wins05['autoets']} of 11 dates)",
+             f"tuning on 2014-2021 ({PROPHET} pp)"],
     "nb03": [rs_cut.replace(" to ", " pp to ", 1), f"{metro_skill} lower", f"about {cov80} of metro"],
     "nb04": [shock_range.replace(" to ", "-"), by_metro("Las Vegas, NV"), by_metro("Phoenix, AZ"), by_metro("Pittsburgh, PA"),
              f"correlation {zf['correlation']:.2f}"],
@@ -190,3 +222,23 @@ def test_qualitative_claims_hold():
         b = scores.loc[("combo+bottom_up", lv, 12), "rmse_pp"]
         best = min(scores.loc[(f"combo+{r}", lv, 12), "rmse_pp"] for r in ("wls_var", "mint_shrink", "wls_struct"))
         assert b <= best * 1.01, lv
+
+
+def test_final_test_verdict_matches_the_documents():
+    """The documents say the final test fails and name the method picked on 2014-2021."""
+    assert sel05["chosen"] == "zillow_style+mint_shrink" and not v05["passes"]
+    assert v05["test_dates"] == 11 and sel05["selection_dates"] == 32
+    for doc in ("readme", "card", "phases", "nb05"):
+        assert "zillow_style+mint_shrink" in DOCS[doc] or doc == "readme", doc
+        assert "fail" in DOCS[doc], doc
+    assert all05["test"].idxmin() == "naive"                       # "no candidate beats no change"
+    assert ch05[["autoets", "autoarima", prophet_pick, "naive", "momentum", "combo+bottom_up"]].idxmin() == "autoets"
+    assert prophet_pick == "prophet_cr95_flex" and ch05[prophet_pick] < ch05["prophet"]
+
+
+def test_forward_forecasts_are_frozen():
+    """Section 5 of notebook 05 saves today's forecasts once: every method, series and horizon."""
+    f = pd.read_csv(METRICS / "05_forward_forecasts_2026-09.csv")
+    assert set(f["method"]) == {"combo+bottom_up", "momentum", "naive", "autoets", "autoarima", "prophet_cr95_flex"}
+    assert f.groupby("method").size().eq(400).all() and set(f["h"]) == {1, 3, 6, 12}
+    assert (f["origin"] == "2026-09-30").all()

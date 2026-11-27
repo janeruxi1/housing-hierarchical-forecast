@@ -15,9 +15,17 @@ checks every number below against the recorded results.
 
 ## Key results
 
-- **It beats the rule of thumb where it matters.** "The last 12 months' growth continues" (momentum) is the
-  usual shortcut. Over 47 quarterly forecast dates, 2014-2025, the chosen forecast's metro 12-month error is
-  14% below momentum, and in the 2022-23 rate shock it falls from 10.6 to 6.0 pp, 44% lower.
+- **Better at 1-3 months; a year out, no better than simple rules on later data.** "The last 12 months'
+  growth continues" (momentum) is the usual shortcut. Over all 47 quarterly forecast dates, 2014-2025, the
+  chosen forecast's metro 12-month error is 14% below momentum, and in the 2022-23 rate shock it falls from
+  10.6 to 6.0 pp, 44% lower. But a final test with its rules written down first (choose on 2014-2021, score
+  once on 2023-2025) fails: the method the early years pick scores 7.6 pp against momentum's 4.5 pp, and no
+  candidate beats the no-change forecast (4.3 pp) at 12 months. At 1-3 months the reconciled forecasts stay
+  well ahead at every level.
+- **Prophet, ETS and ARIMA as challengers.** On the 50 largest metros in 2023-25, a damped-trend AutoETS has
+  the lowest 12-month error (3.4 pp, better than momentum on 10 of 11 dates). AutoARIMA scores 5.1 pp, and
+  Prophet 6.3 pp even after tuning on 2014-2021. Damped ETS joins the candidates, and forecasts frozen in
+  September 2026 are the next real test.
 - **A rate rise is the main 12-month risk, and it is quoted as a range.** A sudden 1-point rise lowers
   national growth by 0.8 to 2.1 pp ($0.45 to $1.2 trillion of housing value). High-beta Sun Belt metros take
   about four times the hit of Rust Belt ones (Las Vegas -4.2 pp, Pittsburgh -1.0 pp).
@@ -41,6 +49,7 @@ Drawn from the recorded results by `scripts/make_readme_figure.py`.*
 | Bar to beat | Rolling-origin backtest harness at 1/3/6/12 months; four no-model rules (no change, drift, momentum, long-run) | [02](notebooks/02_baselines_backtest.ipynb) |
 | Models and reconciliation | Per-place ARIMA(2,1,0), a direct panel regression that reads mortgage rates and unemployment, a Zillow-style model and their combination; bottom-up vs three MinTrace variants; time-safe conformal ranges | [03](notebooks/03_models_reconciliation.ipynb) |
 | Forecast and stress | Forecast from September 2026; comparison with Zillow's published forecast; rate and unemployment scenarios x each county's beta, added up | [04](notebooks/04_scenarios.ipynb) |
+| Final test | Rules written first ([plan](docs/final_test_plan.md)): choose on 2014-2021, score once on 2023-2025; Prophet (tuned on 2014-2021 only), AutoETS and AutoARIMA as challengers; today's forecasts frozen for a forward test | [05](notebooks/05_final_test.ipynb) |
 | Demo | Any state, metro or county, and the rate-shock sliders, on a derived extract that CI checks against the records | [`app/`](app/streamlit_app.py) |
 
 ![Key results at a glance](reports/figures/00_readme_summary.png)
@@ -60,6 +69,9 @@ responses), never Zillow's county series.
 
 ## Limits
 
+- **The 12-month edge is not proven out of sample.** It comes from the 2022 shock; on 2023-2025 nothing
+  beats "no change" a year out ([notebook 05](notebooks/05_final_test.ipynb)). The memo already budgets on
+  Zillow's level and uses this model for ranking and stress.
 - **The rate response leans on one episode.** Refitted without 2020-21 the 1-point shock falls from -2.1
   to -0.8 pp, so the memo quotes the range. A 2008-style recession is outside what the model can represent.
 - **Ranges run narrow at turning points**, and Zillow restates its history, so the backtest uses today's
@@ -75,7 +87,8 @@ pytest -q                                    # synthetic data, as CI does
 python scripts/download_data.py              # real data: about 60 files, a few minutes
 python scripts/build_data.py                 # data/processed/ and reports/metrics/data_audit.json
 python scripts/run_models.py                 # model + reconciliation backtest, about 2 minutes
-python scripts/build_notebooks.py --execute  # notebooks 01-04 on the real data
+python scripts/run_challengers.py           # Prophet, ETS, ARIMA challengers, about 25 minutes (resumable)
+python scripts/build_notebooks.py --execute  # notebooks 01-05 on the real data
 python scripts/build_app_data.py             # the demo's extract (app/data/)
 pip install -r app/requirements.txt && streamlit run app/streamlit_app.py
 ```
@@ -89,7 +102,8 @@ pip install -r app/requirements.txt && streamlit run app/streamlit_app.py
 reports/decision_memo.md, MODEL_CARD.md   the recommendation; what the model is and where it fails
 reports/metrics/, reports/figures/        every number and figure, written by the notebooks
 docs/results.md, docs/PHASES.md           full results; the project phase by phase
-notebooks/01-04                           .py sources (run in CI) + executed .ipynb
+docs/final_test_plan.md                   the final test's rules, written before it was scored
+notebooks/01-05                           .py sources (run in CI) + executed .ipynb
 src/housing/                              ingest, hierarchy, panel, backtest, models, reconcile, scenarios
 app/                                      the demo and its derived extract (app/data/)
 scripts/, tests/                          download, build, figures; pytest on synthetic data + record checks

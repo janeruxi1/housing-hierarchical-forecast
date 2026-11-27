@@ -35,8 +35,8 @@
 
 ## Why
 
-1. **It beats the rule of thumb people actually use.** The usual shortcut is "the last 12 months'
-   growth continues" (momentum). The chosen forecast averages a per-place ARIMA with a panel
+1. **It beats the rule of thumb over the full backtest, though not on later data alone.** The usual
+   shortcut is "the last 12 months' growth continues" (momentum). The chosen forecast averages a per-place ARIMA with a panel
    regression that reads mortgage rates and unemployment, and adds counties up so every level
    agrees. Over 47 quarterly forecast dates from 2014 to 2025, its 12-month error (RMSE of growth):
 
@@ -46,6 +46,11 @@
 | States | 4.6 pp | 5.6 pp | 7.4 pp |
 | Metros | 5.1 pp | 5.9 pp | 7.8 pp |
 | Counties | 5.2 pp | 6.1 pp | 7.9 pp |
+
+   A stricter test says less at 12 months. Choosing the method on 2014-2021 and scoring it once on
+   2023-2025, no candidate beats "no change" a year out (4.3 pp for metros), and this forecast only ties
+   momentum (4.5 pp). That is why item 3 budgets on Zillow's level and uses this model for ranking and
+   stress, where its edge (1-3 months, and the 2022 turn) is clearer.
 
 2. **It holds up at the turning point that matters for this decision.** In the 2022-23 rate shock,
    momentum kept forecasting pandemic-era growth. Metro 12-month error was 10.6 pp for momentum and
@@ -72,9 +77,11 @@
 
 ## Next steps
 
-1. Add listings, inventory and days-on-market data, the leading indicators in Zillow's own method,
+1. Score the forecasts frozen in September 2026 as Zillow publishes new months. They include a
+   damped-trend ETS, the best 12-month forecaster on 2023-2025.
+2. Add listings, inventory and days-on-market data, the leading indicators in Zillow's own method,
    to close the gap with Zillow's level.
-2. Build a 2008-style downturn scenario from historical peak-to-trough losses by metro.
-3. Recalibrate the forecast ranges so 80% means 80%, for example by widening them after large recent misses.
+3. Build a 2008-style downturn scenario from historical peak-to-trough losses by metro.
+4. Recalibrate the forecast ranges so 80% means 80%, for example by widening them after large recent misses.
 
-*Details: [notebooks 01-04](../notebooks/README.md), [model card](../MODEL_CARD.md).*
+*Details: [notebooks 01-05](../notebooks/README.md), [model card](../MODEL_CARD.md).*

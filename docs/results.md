@@ -41,6 +41,7 @@ download ─> county panel (balanced from 2008) ─> hierarchy: US > state / met
 | Baselines and backtest harness | [02](../notebooks/02_baselines_backtest.ipynb) | done |
 | Models and reconciliation | [03](../notebooks/03_models_reconciliation.ipynb) | done |
 | Forecast from today and scenarios | [04](../notebooks/04_scenarios.ipynb) | done |
+| Final test on later data; Prophet, ETS, ARIMA | [05](../notebooks/05_final_test.ipynb) | done |
 
 ## Results
 
@@ -78,11 +79,46 @@ Phoenix -3.8 pp, Pittsburgh -1.0 pp).
   Zillow's 1.1%. The two rank metros alike (correlation 0.79 across 439 metros), but this model sits a
   median 1.2 pp higher. The memo takes the level from Zillow and the ranking and stress from this model.
 
+**The final test: choose on 2014-2021, score once on 2023-2025.** The rules were written down before
+any test score was computed ([plan](final_test_plan.md)). The same selection rule, applied to the 32
+selection dates alone, picks zillow_style+mint_shrink. On the 11 test dates its metro 12-month error is
+7.6 pp against momentum's 4.5 pp, better on only 2 of 11 dates: **it fails**. No candidate passes. The best
+on the test dates is the no-change forecast (4.3 pp); combo+bottom_up ties momentum (4.5 pp, better on
+5 of 11). At 1-3 months the reconciled forecasts stay well ahead at every level.
+
+* *Why.* Averaged over horizons, the 2014-21 rule rewards trend-following in calm years. After the 2022
+  turn the trend-follower broke worst. The 12-month gain in the full backtest comes mostly from the
+  2022 forecast dates, which this test leaves out on purpose.
+* *What changes.* The 12-month claim is narrowed to the full backtest and the 2022 shock. Damped ETS
+  joins the candidates (not declared the winner: it was added after this test was seen). Forecasts
+  from September 2026 for every method are saved once and scored as new months arrive.
+
+**Challengers** (nation, 49 states and the 50 largest metros; 50 largest metros shown, 12 months, 2023-25):
+
+| Method | RMSE | Test dates better than momentum (of 11) |
+|---|---|---|
+| AutoETS (damped trend for almost every series) | 3.4 pp | 10 |
+| No change | 3.9 pp | 7 |
+| Momentum | 4.6 pp | - |
+| combo+bottom_up (this project) | 4.9 pp | 4 |
+| AutoARIMA | 5.1 pp | 5 |
+| Prophet, tuned on 2014-2021 | 6.3 pp | 1 |
+| Prophet, default settings | 13.5 pp | 0 |
+
+Prophet's default trend may only bend in the first 80% of the history, so in 2023 it carried the
+2020-22 boom forward. A later bend point, chosen on 2014-2021 only, halves its error, but its forecast
+still starts from its fitted trend rather than the latest value.
+
+![Final test: error by forecast date](../reports/figures/05_test_by_date.png)
+
 ![Rate shock exposure by metro](../reports/figures/04_metro_exposure.png)
 
 ![Metro 12-month errors over time](../reports/figures/02_metro_error_over_time.png)
 
 ## Limitations (more in the [model card](../MODEL_CARD.md))
+* **The 12-month edge is not proven out of sample.** On 2023-2025 no candidate beats "no change" a year
+  out. The test period was not used to choose, but it was seen while the models were designed (for
+  example, the rate inputs); only the forecasts frozen in September 2026 are truly unseen.
 * **The rate response depends on one episode.** Refitted without 2020-21, the 1-point shock falls from
   -2.1 to -0.8 pp, so the range is quoted. The model cannot represent a 2008-style recession.
 * **Revised history.** Zillow restates ZHVI history (e.g. the January 2023 neural-Zestimate

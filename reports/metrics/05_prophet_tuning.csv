@@ -1,0 +1,4 @@
+method,avg_rmse_pp
+prophet_cr95_flex,2.23627
+prophet_cr95,2.24256
+prophet,3.65226

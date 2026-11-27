@@ -18,6 +18,7 @@ project answers them. Numbers come from `reports/metrics/` and are checked by
 | 8 | What does a rate shock do, and to which metros? | notebook 04, decision memo |
 | 9 | Can anyone rerun it and get the same numbers? | `tests/`, CI, `requirements-lock.txt` |
 | 10 | Review: what was strengthened, and what is left | this page |
+| 11 | Does the choice hold on later data, and how do Prophet, ETS and ARIMA compare? | notebook 05, `docs/final_test_plan.md`, `src/housing/finaltest.py` |
 
 ---
 
@@ -131,7 +132,8 @@ backtest runs in about two minutes:
 
 **What it found.** Combo, added up from counties, wins: metro 12-month RMSE 5.1 pp, 14% below momentum.
 In the rate shock it falls from 10.6 to 6.0 pp. It is not better everywhere: in the 2020-22 boom it was
-slightly worse than momentum (8.0 vs 7.4 pp).
+slightly worse than momentum (8.0 vs 7.4 pp). Phase 11 tests this choice on later data, and it does not hold
+up a year out.
 
 ---
 
@@ -213,7 +215,7 @@ spread, the multiple set from past errors at the same level.
   * scenario coherence;
   * every number quoted in the README, memo, model card and notebook summaries, checked against
     `reports/metrics`.
-* **CI** runs lint, the tests, the notebook-source check, and the whole pipeline and all four notebooks
+* **CI** runs lint, the tests, the notebook-source check, and the whole pipeline and all five notebooks
   on synthetic data. It then checks that the recorded metrics were not touched.
 * **Pinned versions.** `requirements-lock.txt` holds the exact library versions that produced the
   results (Python 3.10), and CI installs it.
@@ -241,8 +243,47 @@ shocks, backtest errors), never Zillow's county series, and `tests/test_app_data
 against the notebook records.
 
 **Left, in order of value.**
-1. A downturn scenario built from historical peak-to-trough losses by metro, in place of the linear
+1. Score the forecasts frozen in September 2026 (Phase 11) as new months arrive.
+2. A downturn scenario built from historical peak-to-trough losses by metro, in place of the linear
    recession scenario.
-2. Ranges recalibrated after large recent misses, so that 80% means 80%.
-3. Listings, inventory and days-on-market data, the leading indicators in Zillow's own method, to
+3. Ranges recalibrated after large recent misses, so that 80% means 80%.
+4. Listings, inventory and days-on-market data, the leading indicators in Zillow's own method, to
    close the gap with Zillow's level.
+
+---
+
+## Phase 11 · Final test on later data, and standard challengers
+
+**Question.** Phases 4-5 chose the method and scored it on the same 47 dates. Picking the best of 26
+and scoring it where it was picked flatters it. Does the choice hold on dates it did not see?
+
+**What was done.**
+* *Rules first.* [docs/final_test_plan.md](final_test_plan.md) fixed the split and the pass rule before
+  any test score: choose on 32 dates (2014 to 2021), skip 2022 (its 12-month outcomes fall in the test
+  period), score once on 11 dates (2023 to 2025). Pass: lower metro 12-month RMSE than momentum, and
+  lower on at least 7 of the 11 dates.
+* *Challengers.* AutoETS and AutoARIMA (statsforecast) and Prophet, one series at a time, on the
+  nation, 49 states and 50 largest metros. Checkpointed per model and date
+  (`scripts/run_challengers.py`), so it runs in short pieces on a small machine.
+* *Prophet, fairly.* Its default trend may only bend in the first 80% of the history. Two other
+  settings were compared on 8 selection dates and the best taken to the test. This step was added
+  after the default's test scores were seen, and the plan says so.
+* *A forward test.* Every method's forecasts from September 2026 are saved once and never overwritten,
+  to be scored as new months arrive.
+
+**What it found.**
+* The rule picks zillow_style+mint_shrink, and it fails: 7.6 pp against momentum's 4.5 pp, better on 2 of
+  11 dates. No candidate passes; "no change" is best (4.3 pp) and combo+bottom_up ties momentum.
+* Damped-trend ETS is best on the test dates (3.4 pp on the 50 largest metros, better than momentum on 10
+  of 11). Prophet is worst even after tuning (6.3 pp).
+
+**Decisions.**
+* The README, memo and model card now separate what holds (1-3 months; the 2022 turn; ranking and
+  rate sensitivity) from what does not (the 12-month level on later data).
+* Damped ETS joins the candidates but is not declared the winner: it was added after this test was seen.
+* Next time the selection rule should weight the horizon the decision uses (12 months) and check each
+  period, not only the average, which favoured trend-followers.
+
+**Reviewer objection:** "You saw 2022-23 while designing the models." Yes: the rate inputs were added with
+the whole history in view. The test period was not used to choose among methods, but it is not unseen.
+The frozen September 2026 forecasts are.
