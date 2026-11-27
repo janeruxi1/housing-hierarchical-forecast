@@ -13,6 +13,8 @@ data/raw/*
 # Processed panel built from the raw files (rebuilt by scripts/build_data.py)
 data/processed/*
 !data/processed/README.md
+# The same panel rebuilt from the raw index (scripts/run_robustness.py, notebook 06)
+data/processed_raw/
 # Synthetic data used by tests and CI
 data/synthetic/
 

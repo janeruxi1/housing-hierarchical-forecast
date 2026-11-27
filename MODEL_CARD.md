@@ -60,6 +60,9 @@ only data available at its date, and a test checks this. RMSE of 12-month growth
 * **How sure** (date-by-date Diebold-Mariano tests and block-bootstrap intervals, metros, all 47 dates):
   60% below momentum at 1 month (95% interval 52 to 67%), 35% at 3 months (23 to 45%), 14% at 12 months
   (-4% to +33%, not distinguishable from zero).
+* **Raw index** (notebook 06; same counties, every model refitted on Zillow's raw, unsmoothed, not
+  seasonally adjusted index; bar = best of no change, momentum and seasonal naive): metro error 32% below it
+  at 1 month (95% interval 25 to 39%), 10% at 3 months (-5% to +21%), 9% at 12 months.
 * **Challengers** (50 largest metros, 12 months, 2023-25): AutoETS 3.4 pp (damped trend), AutoARIMA
   5.1 pp, Prophet 6.3 pp after tuning on 2014-2021.
 * **Ranges:** nominal 80% ranges cover 73% of metro outcomes at 12 months, and 95% ranges cover 89%.
@@ -73,7 +76,8 @@ only data available at its date, and a test checks this. RMSE of 12-month growth
   on 2023-2025 nothing beats "no change" a year out. Use the model for ranking, short horizons and stress.
 * **Optimistic level.** From September 2026 this model expects 3.2% national growth, against Zillow's 1.1%.
   It ranks metros like Zillow (correlation 0.79) but sits a median 1.2 pp higher.
-* **Smoothing and revisions** flatter short-horizon accuracy. Backtests use today's revised history.
+* **Smoothing and revisions** flatter short-horizon accuracy: on the raw index the 3-month gain mostly
+  disappears and only the 1-month gain holds. Backtests use today's revised history.
 * **Rate response:**
   * The response is linear, immediate and associational, learned in 2010-2026.
   * It depends heavily on the 2020-21 pandemic: refitted without those years, the 1-point shock falls

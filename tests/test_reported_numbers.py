@@ -22,7 +22,7 @@ DOCS = {name: norm((ROOT / path).read_text(encoding="utf-8"))
         for name, path in [("readme", "README.md"), ("results", "docs/results.md"), ("memo", "reports/decision_memo.md"),
                            ("card", "MODEL_CARD.md"), ("nb03", "notebooks/03_models_reconciliation.py"),
                            ("nb04", "notebooks/04_scenarios.py"), ("phases", "docs/PHASES.md"),
-                           ("nb05", "notebooks/05_final_test.py")]}
+                           ("nb05", "notebooks/05_final_test.py"), ("nb06", "notebooks/06_raw_index.py")]}
 
 
 def j(name):
@@ -84,6 +84,13 @@ SIG_LONG = (f"{pc(s1['skill'])}% below momentum at 1 month (95% interval {pc(s1[
             f"{pc(s1['skill_hi95'])}%), {pc(s3['skill'])}% at 3 months ({pc(s3['skill_lo95'])} to {pc(s3['skill_hi95'])}%), "
             f"{pc(s12['skill'])}% at 12 months ({S12}")
 
+# Notebook 06: the raw index (metros, against the best simple rule, all 47 dates)
+raw_sig = c("06_raw_significance").query("period == 'all 47 dates' and level == 'Metro'").set_index("h")
+r1, r3, r12 = raw_sig.loc[1], raw_sig.loc[3], raw_sig.loc[12]
+raw_audit, swing = j("06_raw_audit"), j("06_raw_vs_smoothed")["seasonal swing, raw (pp, highest minus lowest month)"]
+R1, R1LO, R1HI, R3, R12 = pc(r1["skill"]), pc(r1["skill_lo95"]), pc(r1["skill_hi95"]), pc(r3["skill"]), pc(r12["skill"])
+S3 = f"{100 * r3['skill_lo95']:+.0f}% to {100 * r3['skill_hi95']:+.0f}%"
+
 LEVELS = [("National", "Nation"), ("State", "States"), ("Metro", "Metros"), ("County", "Counties")]
 ACCURACY_ROWS = [f"| {label} | {f1(final.loc[(lv, 12), chosen])} pp | {f1(final.loc[(lv, 12), 'momentum'])} pp | "
                  f"{f1(final.loc[(lv, 12), 'naive'])} pp |" for lv, label in LEVELS]
@@ -135,6 +142,11 @@ CLAIMS = {
         f"ties momentum ({T_COMBO} pp, better on {T_COMBO_WINS} of 11)", *CH_ROWS,
         SIG_SHORT, f"interval runs from {S12}", f"{SIG_LONG}, Diebold-Mariano p = {s12['dm_p']:.2f})",
         f"gains hold ({pc(t1['skill'])}% and {pc(t3['skill'])}%)",
+        f"error is still {R1}% below the best simple rule at 1 month (95% interval {R1LO} to {R1HI}%)",
+        f"only {R3}% below a seasonal rule ({S3})",
+        f"metro error is {R1}% below the best simple rule at 1 month (95% interval {R1LO} to {R1HI}%), against "
+        f"{pc(s1['skill'])}% on the smoothed index", f"{R3}% below a seasonal-naive rule ({S3})",
+        f"at 12 months it is {R12}%", f"swings about {swing:.1f} pp",
     ],
     "memo": [
         *ACCURACY_ROWS,
@@ -155,6 +167,7 @@ CLAIMS = {
         f"{f1(scores.loc[('combo', 'National', 12), 'rmse_pp'])} pp",
         f"({T_NAIVE} pp for metros)", f"only ties momentum ({T_COMBO} pp)",
         f"interval runs from {S12}", f"({pc(s1['skill'])}% and {pc(s3['skill'])}% below momentum for metros)",
+        f"only the 1-month gain survives ({R1}% below the best simple rule)",
     ],
     "card": [
         *ACCURACY_ROWS,
@@ -171,6 +184,8 @@ CLAIMS = {
         f"scores {T_CH} pp at metro 12 months against momentum's {T_MOM} pp", f"\"no change\" ({T_NAIVE} pp)",
         f"ties momentum ({T_COMBO} pp)", f"AutoETS {ETS} pp", f"AutoARIMA {ARIMA} pp", f"Prophet {PROPHET} pp",
         f"{SIG_LONG}, not distinguishable from zero)",
+        f"metro error {R1}% below it at 1 month (95% interval {R1LO} to {R1HI}%), {R3}% at 3 months ({S3}), "
+        f"{R12}% at 12 months",
     ],
     "phases": [
         f"{audit['counties_full_history']:,} counties", f"{round(100 * audit['share_of_us_housing_units_kept'])}%",
@@ -195,12 +210,19 @@ CLAIMS = {
         f"clear at 1 month ({pc(s1['skill'])}%, 95% interval {pc(s1['skill_lo95'])} to {pc(s1['skill_hi95'])}%) and 3 "
         f"months ({pc(s3['skill'])}%, {pc(s3['skill_lo95'])} to {pc(s3['skill_hi95'])}%), but not at 12 months "
         f"({pc(s12['skill'])}%, {S12})",
+        f"All {raw_audit['counties_raw']:,} counties have a full raw history", f"swings about {swing:.1f} pp",
+        f"metro error {R1}% below the best simple rule (95% interval {R1LO} to {R1HI}%), against {pc(s1['skill'])}% "
+        "on the smoothed index", f"{R3}% below seasonal naive ({S3}). At 12 months, {R12}%",
     ],
     "nb05": [f"{T_CH} pp metro 12-month error against {T_MOM} pp for momentum, better on only {v05['wins']} of "
              f"{v05['test_dates']}", f"no-change forecast ({T_NAIVE} pp)", f"({T_COMBO} pp, {T_COMBO_WINS} of 11 dates)",
              f"({ETS} pp on the 50 largest metros, better than momentum on {wins05['autoets']} of 11 dates)",
              f"tuning on 2014-2021 ({PROPHET} pp)", f"(95% interval {S12})",
              f"({pc(s1['skill'])}% and {pc(s3['skill'])}% for metros)"],
+    "nb06": [f"metro error {R1}% below the best simple rule (95% interval {R1LO}% to {R1HI}%), down from "
+             f"{pc(s1['skill'])}% on the smoothed index", f"{R3}% below seasonal naive, with an interval from {S3}",
+             f"so most of the smoothed index's {pc(s3['skill'])}% came from the smoothing", f"small and uncertain ({R12}%)",
+             f"about {swing:.1f} pp of monthly growth"],
     "nb03": [rs_cut.replace(" to ", " pp to ", 1), f"{metro_skill} lower", f"about {cov80} of metro"],
     "nb04": [shock_range.replace(" to ", "-"), by_metro("Las Vegas, NV"), by_metro("Phoenix, AZ"), by_metro("Pittsburgh, PA"),
              f"correlation {zf['correlation']:.2f}"],
@@ -275,3 +297,11 @@ def test_significance_claims_hold():
     for r in (s1, s3, t1, t3):
         assert r["skill_lo95"] > 0 and r["dm_p"] < 0.05
     assert s12["skill_lo95"] < 0 < s12["skill_hi95"] and s12["dm_p"] > 0.05
+
+
+def test_raw_index_claims_hold():
+    """'Only the 1-month edge survives on the raw index', on the same counties."""
+    assert raw_audit["counties_raw"] == raw_audit["counties_smoothed"] == audit["counties_full_history"]
+    assert r1["skill_lo95"] > 0 and r1["dm_p"] < 0.01
+    assert r3["skill_lo95"] < 0 < r3["skill_hi95"] and r3["rule"] == "seasonal_naive"
+    assert r12["skill_lo95"] < 0 < r12["skill_hi95"]

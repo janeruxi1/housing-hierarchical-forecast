@@ -23,6 +23,10 @@ checks every number below against the recorded results.
   it could be chance. A final test with its rules written down first (choose on 2014-2021, score once on
   2023-2025) fails: the method the early years pick scores 7.6 pp against momentum's 4.5 pp, and no candidate
   beats the no-change forecast (4.3 pp) a year out.
+- **On real prices, only the 1-month edge survives.** Zillow's headline index is smoothed and seasonally
+  adjusted, which flatters short horizons. Rebuilt from the raw index and refitted, the forecast's metro
+  error is still 32% below the best simple rule at 1 month (95% interval 25 to 39%), but at 3 months it is
+  only 10% below a seasonal rule (-5% to +21%): most of that gain came from the smoothing.
 - **Prophet, ETS and ARIMA as challengers.** On the 50 largest metros in 2023-25, a damped-trend AutoETS has
   the lowest 12-month error (3.4 pp, better than momentum on 10 of 11 dates). AutoARIMA scores 5.1 pp, and
   Prophet 6.3 pp even after tuning on 2014-2021. Damped ETS joins the candidates, and forecasts frozen in
@@ -51,6 +55,7 @@ Drawn from the recorded results by `scripts/make_readme_figure.py`.*
 | Models and reconciliation | Per-place ARIMA(2,1,0), a direct panel regression that reads mortgage rates and unemployment, a Zillow-style model and their combination; bottom-up vs three MinTrace variants; time-safe conformal ranges | [03](notebooks/03_models_reconciliation.ipynb) |
 | Forecast and stress | Forecast from September 2026; comparison with Zillow's published forecast; rate and unemployment scenarios x each county's beta, added up | [04](notebooks/04_scenarios.ipynb) |
 | Final test | Rules written first ([plan](docs/final_test_plan.md)): choose on 2014-2021, score once on 2023-2025; Diebold-Mariano tests and block-bootstrap intervals by forecast date; Prophet (tuned on 2014-2021 only), AutoETS and AutoARIMA as challengers; today's forecasts frozen for a forward test | [05](notebooks/05_final_test.ipynb) |
+| Robustness | The same counties and hierarchy rebuilt from Zillow's raw index (not smoothed, not seasonally adjusted), every model refitted, scored against a seasonal-naive rule too | [06](notebooks/06_raw_index.ipynb) |
 | Demo | Any state, metro or county, and the rate-shock sliders, on a derived extract that CI checks against the records | [`app/`](app/streamlit_app.py) |
 
 ![Key results at a glance](reports/figures/00_readme_summary.png)
@@ -89,7 +94,8 @@ python scripts/download_data.py              # real data: about 60 files, a few 
 python scripts/build_data.py                 # data/processed/ and reports/metrics/data_audit.json
 python scripts/run_models.py                 # model + reconciliation backtest, about 2 minutes
 python scripts/run_challengers.py           # Prophet, ETS, ARIMA challengers, about 25 minutes (resumable)
-python scripts/build_notebooks.py --execute  # notebooks 01-05 on the real data
+python scripts/run_robustness.py            # the raw-index panel and backtest, about 4 minutes
+python scripts/build_notebooks.py --execute  # notebooks 01-06 on the real data
 python scripts/build_app_data.py             # the demo's extract (app/data/)
 pip install -r app/requirements.txt && streamlit run app/streamlit_app.py
 ```
@@ -104,7 +110,7 @@ reports/decision_memo.md, MODEL_CARD.md   the recommendation; what the model is 
 reports/metrics/, reports/figures/        every number and figure, written by the notebooks
 docs/results.md, docs/PHASES.md           full results; the project phase by phase
 docs/final_test_plan.md                   the final test's rules, written before it was scored
-notebooks/01-05                           .py sources (run in CI) + executed .ipynb
+notebooks/01-06                           .py sources (run in CI) + executed .ipynb
 src/housing/                              ingest, hierarchy, panel, backtest, models, reconcile, scenarios
 app/                                      the demo and its derived extract (app/data/)
 scripts/, tests/                          download, build, figures; pytest on synthetic data + record checks

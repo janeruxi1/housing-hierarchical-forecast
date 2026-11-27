@@ -24,8 +24,8 @@ def read_zillow_wide(path: Path) -> pd.DataFrame:
     return long.dropna(subset=["value"]).reset_index(drop=True)
 
 
-def load_county_zhvi(raw: Path) -> pd.DataFrame:
-    df = read_zillow_wide(raw / "zhvi_county.csv")
+def load_county_zhvi(raw: Path, name: str = "zhvi_county.csv") -> pd.DataFrame:
+    df = read_zillow_wide(raw / name)
     st = df["StateCodeFIPS"].astype(str).str.zfill(2)
     co = df["MunicipalCodeFIPS"].astype(str).str.zfill(3)
     out = pd.DataFrame({

@@ -1,0 +1,33 @@
+variant,period,level,h,rule,skill,skill_lo95,skill_hi95,dm_p
+raw,all 47 dates,National,1,momentum,0.477887,0.322092,0.583547,0.00886265
+raw,all 47 dates,National,3,seasonal_naive,0.224845,0.0114607,0.351505,0.0532417
+raw,all 47 dates,National,6,momentum,0.171109,-0.0656843,0.329503,0.309982
+raw,all 47 dates,National,12,momentum,0.108909,-0.246109,0.343829,0.575546
+raw,all 47 dates,State,1,momentum,0.42105,0.312441,0.512048,0.000328418
+raw,all 47 dates,State,3,seasonal_naive,0.132648,-0.073777,0.265378,0.137311
+raw,all 47 dates,State,6,seasonal_naive,0.101781,-0.109821,0.248587,0.381801
+raw,all 47 dates,State,12,momentum,0.0927643,-0.160828,0.305612,0.561219
+raw,all 47 dates,Metro,1,momentum,0.324426,0.25376,0.389119,4.3355e-06
+raw,all 47 dates,Metro,3,seasonal_naive,0.0964475,-0.0506298,0.211208,0.15765
+raw,all 47 dates,Metro,6,seasonal_naive,0.0651496,-0.0841469,0.191844,0.449699
+raw,all 47 dates,Metro,12,momentum,0.0870262,-0.104171,0.278239,0.504225
+raw,all 47 dates,County,1,momentum,0.30079,0.231915,0.364154,2.90556e-06
+raw,all 47 dates,County,3,seasonal_naive,0.109197,-0.0285765,0.221525,0.113302
+raw,all 47 dates,County,6,seasonal_naive,0.072913,-0.0630734,0.193146,0.374987
+raw,all 47 dates,County,12,momentum,0.0958321,-0.082695,0.277422,0.433719
+raw,"test, 2023-25",National,1,momentum,0.407708,-0.0266575,0.674531,0.28238
+raw,"test, 2023-25",National,3,seasonal_naive,0.223427,-0.289844,0.437873,0.322664
+raw,"test, 2023-25",National,6,momentum,-0.203971,-0.693602,0.167982,0.296358
+raw,"test, 2023-25",National,12,momentum,-0.149582,-0.844905,0.405347,0.751276
+raw,"test, 2023-25",State,1,momentum,0.393884,0.165237,0.58563,0.168218
+raw,"test, 2023-25",State,3,seasonal_naive,0.144899,-0.142246,0.325247,0.326535
+raw,"test, 2023-25",State,6,seasonal_naive,-0.0662796,-0.485107,0.385018,0.793189
+raw,"test, 2023-25",State,12,momentum,-0.126826,-0.769941,0.355341,0.760918
+raw,"test, 2023-25",Metro,1,momentum,0.295414,0.14927,0.440734,0.0828441
+raw,"test, 2023-25",Metro,3,seasonal_naive,0.051999,-0.232488,0.252544,0.681348
+raw,"test, 2023-25",Metro,6,seasonal_naive,-0.0839159,-0.287458,0.205672,0.567301
+raw,"test, 2023-25",Metro,12,momentum,-0.0520681,-0.375971,0.253388,0.821774
+raw,"test, 2023-25",County,1,momentum,0.26915,0.131768,0.411192,0.0778404
+raw,"test, 2023-25",County,3,seasonal_naive,0.0430533,-0.263803,0.26622,0.750862
+raw,"test, 2023-25",County,6,seasonal_naive,-0.0729821,-0.251261,0.188795,0.584152
+raw,"test, 2023-25",County,12,momentum,-0.0131585,-0.247533,0.233715,0.940188

@@ -48,7 +48,8 @@
 | Counties | 5.2 pp | 6.1 pp | 7.9 pp |
 
    The 12-month gain is also uncertain: compared date by date, its 95% interval runs from -4% to +33%,
-   while the 1- and 3-month gains are clear (60% and 35% below momentum for metros). A stricter test says
+   while the 1- and 3-month gains are clear (60% and 35% below momentum for metros). On Zillow's raw,
+   unsmoothed index only the 1-month gain survives (32% below the best simple rule). A stricter test says
    less at 12 months. Choosing the method on 2014-2021 and scoring it once on
    2023-2025, no candidate beats "no change" a year out (4.3 pp for metros), and this forecast only ties
    momentum (4.5 pp). That is why item 3 budgets on Zillow's level and uses this model for ranking and

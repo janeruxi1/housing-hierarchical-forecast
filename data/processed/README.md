@@ -13,3 +13,5 @@ Built by `python scripts/build_data.py` from `data/raw/`.
 | `macro_month.parquet`, `state_unemp.parquet`, `population_county.parquet` | month / state-month / county-year | drivers |
 | `backtest_models.parquet`, `panel_coefficients.parquet` | method x date x horizon x node | model and reconciliation backtest (`scripts/run_models.py`) |
 | `challengers.parquet`, `challengers/` | method x date x horizon x series | Prophet, AutoETS and AutoARIMA backtest, one checkpoint per model and date (`scripts/run_challengers.py`) |
+
+`data/processed_raw/` (not committed) holds the same tables rebuilt from Zillow's raw index, for the robustness check in notebook 06 (`scripts/run_robustness.py`).

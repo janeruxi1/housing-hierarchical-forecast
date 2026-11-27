@@ -107,7 +107,8 @@ us0 = float(D["g12"]["US"])
 rate1 = {v: log_pp(float(scenario(v, 1.0, 0.0)["US"]), us0) for v in VERSIONS}
 metro12 = final[(final["level"] == "Metro") & (final["h"] == 12)].iloc[0]
 sig = metrics_csv("05_significance").set_index(["period", "level", "h"])
-sig3, sig12 = sig.loc[("all 47 dates", "Metro", 3)], sig.loc[("all 47 dates", "Metro", 12)]
+sig1, sig12 = sig.loc[("all 47 dates", "Metro", 1)], sig.loc[("all 47 dates", "Metro", 12)]
+raw1 = metrics_csv("06_raw_significance").query("period == 'all 47 dates' and level == 'Metro' and h == 1").iloc[0]
 verdict = metrics_json("05_verdict")
 
 # --- Header -------------------------------------------------------------------
@@ -156,8 +157,9 @@ with tab_answer:
     k2.metric("Zillow's forecast, same month", pct(vs_z["us_zillow_pct"]), border=True,
               help=f"Zillow's published forecast (ZHVF). Across {vs_z['metros_compared']} metros this model sits a "
                    f"median {vs_z['median_gap_pp']:.1f} pp higher, so the memo budgets on Zillow's level.")
-    k3.metric("Metro error vs momentum, 3 months ahead", f"{-sig3['skill']:.0%}", border=True,
-              help=f"Over 47 forecast dates; 95% interval {-sig3['skill_hi95']:.0%} to {-sig3['skill_lo95']:.0%}. "
+    k3.metric("Metro error vs momentum, 1 month ahead", f"{-sig1['skill']:.0%}", border=True,
+              help=f"Over 47 forecast dates; 95% interval {-sig1['skill_hi95']:.0%} to {-sig1['skill_lo95']:.0%}. "
+                   f"On Zillow's raw, unsmoothed index it is still {-raw1['skill']:.0%} against the best simple rule. "
                    f"At 12 months the gain is {metro12['skill_vs_momentum']:.0%} ({metro12['combo+bottom_up']:.1f} pp "
                    f"against {metro12['momentum']:.1f} pp), but its interval ({sig12['skill_lo95']:+.0%} to "
                    f"{sig12['skill_hi95']:+.0%}) includes zero, and on 2023-25 alone it only ties momentum.")

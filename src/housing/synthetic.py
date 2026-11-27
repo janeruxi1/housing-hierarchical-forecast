@@ -93,6 +93,12 @@ def write_raw(raw: Path, seed: int = 0) -> None:
         return pd.concat([pd.DataFrame(meta), vals], axis=1)
 
     wide(counties, list(county_paths.values())).to_csv(raw / "zhvi_county.csv", index=False)
+    # The raw index: the same homes with a seasonal cycle (spring high) and month-to-month noise that
+    # Zillow's smoothing and seasonal adjustment remove.
+    rng_raw = np.random.default_rng(seed + 1)
+    season = 0.008 * np.sin(2 * np.pi * (dates.month.to_numpy() - 3) / 12)
+    raw_paths = [p * np.exp(season + rng_raw.normal(0, 0.004, n)) for p in county_paths.values()]
+    wide(counties, raw_paths).to_csv(raw / "zhvi_county_raw.csv", index=False)
 
     # Zillow's published metro/state/national series: our unit-weighted average, plus a small
     # gap, because Zillow weights by value and covers homes our county set does not.

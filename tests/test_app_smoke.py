@@ -33,7 +33,7 @@ def test_headline_matches_recorded_metrics(app):
     stress = json.loads((M / "04_stress_falls.json").read_text())
     assert v["Large metros losing value under stress"] == f"{stress['metros_of_50_falling']} of 50"
     sig = pd.read_csv(M / "05_significance.csv").set_index(["period", "level", "h"])
-    assert v["Metro error vs momentum, 3 months ahead"] == f"{-sig.loc[('all 47 dates', 'Metro', 3), 'skill']:.0%}"
+    assert v["Metro error vs momentum, 1 month ahead"] == f"{-sig.loc[('all 47 dates', 'Metro', 1), 'skill']:.0%}"
 
 
 def test_every_level_and_the_largest_places(app):

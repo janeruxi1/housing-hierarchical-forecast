@@ -12,6 +12,12 @@ FIGURES = ROOT / "reports" / "figures"
 METRICS = ROOT / "reports" / "metrics"
 
 
+def zhvi_variant() -> str:
+    """'smoothed' (default: Zillow's smoothed, seasonally adjusted index) or 'raw' (notebook 06's
+    robustness check). The raw variant reads and writes data/processed_raw/ instead of processed/."""
+    return "raw" if os.environ.get("HOUSING_ZHVI", "") == "raw" else "smoothed"
+
+
 def use_synthetic() -> bool:
     """CI and tests set HOUSING_SYNTHETIC=1 so nothing reads the (uncommitted) real data."""
     return os.environ.get("HOUSING_SYNTHETIC", "") not in ("", "0")
@@ -19,9 +25,10 @@ def use_synthetic() -> bool:
 
 def data_dirs() -> tuple[Path, Path]:
     """(raw, processed) folders for the current mode."""
+    suffix = "_raw" if zhvi_variant() == "raw" else ""
     if use_synthetic():
-        return SYNTHETIC / "raw", SYNTHETIC / "processed"
-    return RAW, PROCESSED
+        return SYNTHETIC / "raw", SYNTHETIC / f"processed{suffix}"
+    return RAW, PROCESSED.parent / f"processed{suffix}"
 
 
 # --- Zillow Research public CSVs (https://www.zillow.com/research/data/) -------------------
@@ -29,12 +36,15 @@ def data_dirs() -> tuple[Path, Path]:
 # itself forecasts (ZHVF). Zillow notes that download paths change occasionally, so the
 # downloader falls back to searching the data page for the file name.
 ZHVI_CUT = "uc_sfrcondo_tier_0.33_0.67_sm_sa_month"
+ZHVI_CUT_RAW = "uc_sfrcondo_tier_0.33_0.67_month"
 ZILLOW_BASE = "https://files.zillowstatic.com/research/public_csvs"
 ZILLOW_FILES = {
     "zhvi_county.csv": f"{ZILLOW_BASE}/zhvi/County_zhvi_{ZHVI_CUT}.csv",
     "zhvi_metro.csv": f"{ZILLOW_BASE}/zhvi/Metro_zhvi_{ZHVI_CUT}.csv",  # includes the "United States" row
     "zhvi_state.csv": f"{ZILLOW_BASE}/zhvi/State_zhvi_{ZHVI_CUT}.csv",
     "zhvf_metro.csv": f"{ZILLOW_BASE}/zhvf_growth/Metro_zhvf_growth_{ZHVI_CUT}.csv",
+    # Robustness check (notebook 06): the same cut, raw - neither smoothed nor seasonally adjusted.
+    "zhvi_county_raw.csv": f"{ZILLOW_BASE}/zhvi/County_zhvi_{ZHVI_CUT_RAW}.csv",
 }
 ZILLOW_DATA_PAGE = "https://www.zillow.com/research/data/"
 

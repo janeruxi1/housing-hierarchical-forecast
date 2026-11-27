@@ -19,6 +19,7 @@ project answers them. Numbers come from `reports/metrics/` and are checked by
 | 9 | Can anyone rerun it and get the same numbers? | `tests/`, CI, `requirements-lock.txt` |
 | 10 | Review: what was strengthened, and what is left | this page |
 | 11 | Does the choice hold on later data, and how do Prophet, ETS and ARIMA compare? | notebook 05, `docs/final_test_plan.md`, `src/housing/finaltest.py` |
+| 12 | Does the short-horizon edge survive on real (unsmoothed) prices? | notebook 06, `src/housing/robustness.py` |
 
 ---
 
@@ -216,7 +217,7 @@ spread, the multiple set from past errors at the same level.
   * scenario coherence;
   * every number quoted in the README, memo, model card and notebook summaries, checked against
     `reports/metrics`.
-* **CI** runs lint, the tests, the notebook-source check, and the whole pipeline and all five notebooks
+* **CI** runs lint, the tests, the notebook-source check, and the whole pipeline and all six notebooks
   on synthetic data. It then checks that the recorded metrics were not touched.
 * **Pinned versions.** `requirements-lock.txt` holds the exact library versions that produced the
   results (Python 3.10), and CI installs it.
@@ -298,3 +299,29 @@ narrowed to match.
 **Reviewer objection:** "You saw 2022-23 while designing the models." Yes: the rate inputs were added with
 the whole history in view. The test period was not used to choose among methods, but it is not unseen.
 The frozen September 2026 forecasts are.
+
+---
+
+## Phase 12 · Robustness on the raw index
+
+**Question.** Zillow's headline index is smoothed and seasonally adjusted, so this month's value already
+holds part of next month's. Is the 1-3 month edge real, or an artefact of the smoothing?
+
+**What was done.** The same 1,371 counties, housing-unit weights and hierarchy were rebuilt from Zillow's
+raw index (`src/housing/robustness.py`), every model refitted and the backtest rerun
+(`scripts/run_robustness.py`, about 4 minutes). The raw index has a seasonal cycle, so a *seasonal naive*
+rule (the same months' growth a year earlier) joined the bar to beat. Comparisons use the same date-by-date
+tests as Phase 11.
+
+**What it found.**
+* All 1,371 counties have a full raw history; its monthly growth swings about 1.2 pp between the best and
+  worst months of the year.
+* At 1 month the edge holds: metro error 32% below the best simple rule (95% interval 25 to 39%), against
+  60% on the smoothed index.
+* At 3 months it mostly goes: 10% below seasonal naive (-5% to +21%). At 12 months, 9%.
+
+**Decision.** The headline claim for real prices is a better next month. The 3-month figure is quoted only
+for Zillow's smoothed index, the series Zillow itself forecasts.
+
+**Reviewer objection:** "Your short-horizon win is just smoothing." Partly true, and now measured: the
+3-month gain is, the 1-month gain is not.

@@ -42,6 +42,7 @@ download ─> county panel (balanced from 2008) ─> hierarchy: US > state / met
 | Models and reconciliation | [03](../notebooks/03_models_reconciliation.ipynb) | done |
 | Forecast from today and scenarios | [04](../notebooks/04_scenarios.ipynb) | done |
 | Final test on later data; Prophet, ETS, ARIMA | [05](../notebooks/05_final_test.ipynb) | done |
+| Robustness on the raw index | [06](../notebooks/06_raw_index.ipynb) | done |
 
 ## Results
 
@@ -118,6 +119,16 @@ months (-4% to +33%, Diebold-Mariano p = 0.31). On 2023-2025 alone the 1- and 3-
 
 ![Chosen forecast vs momentum, with 95% intervals](../reports/figures/05_skill_intervals.png)
 
+**Robustness: the raw index.** Zillow's headline index is smoothed and seasonally adjusted, so part of
+next month is already in this month's value. Rebuilt from the raw index (same 1,371 counties and weights;
+its monthly growth swings about 1.2 pp between the best and worst months of the year) and with every model
+refitted, the metro error is 32% below the best simple rule at 1 month (95% interval 25 to 39%), against
+60% on the smoothed index. At 3 months the gain falls to 10% below a seasonal-naive rule (-5% to +21%),
+and at 12 months it is 9%, neither distinguishable from chance. So for actual prices the defensible edge
+is the next month.
+
+![Metro error by horizon, smoothed vs raw index](../reports/figures/06_side_by_side.png)
+
 ![Final test: error by forecast date](../reports/figures/05_test_by_date.png)
 
 ![Rate shock exposure by metro](../reports/figures/04_metro_exposure.png)
@@ -125,6 +136,8 @@ months (-4% to +33%, Diebold-Mariano p = 0.31). On 2023-2025 alone the 1- and 3-
 ![Metro 12-month errors over time](../reports/figures/02_metro_error_over_time.png)
 
 ## Limitations (more in the [model card](../MODEL_CARD.md))
+* **On the raw index only the 1-month edge holds** (notebook 06); the 3-month gain on the smoothed index
+  comes mostly from the smoothing.
 * **The 12-month edge is not proven out of sample.** On 2023-2025 no candidate beats "no change" a year
   out. The test period was not used to choose, but it was seen while the models were designed (for
   example, the rate inputs); only the forecasts frozen in September 2026 are truly unseen.
