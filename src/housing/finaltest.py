@@ -76,10 +76,7 @@ def forecast_challengers(L: pd.DataFrame, series: list[str], origins, model: str
     for o in origins:
         i = L.index.get_loc(o)
         hist = X.iloc[: i + 1]
-        if model.startswith("prophet"):
-            f = _prophet(hist, max(horizons), n_jobs, **PROPHET_SETTINGS[model])
-        else:
-            f = _statsforecast(hist, max(horizons), model, n_jobs)
+        f = forecast_paths(hist, model, max(horizons), n_jobs)
         for h in horizons:
             if i + h >= len(L):
                 continue
@@ -89,6 +86,13 @@ def forecast_challengers(L: pd.DataFrame, series: list[str], origins, model: str
                 "actual": (X.iloc[i + h].to_numpy() - hist.iloc[-1].to_numpy()).astype("float32"),
             }))
     return pd.concat(rows, ignore_index=True)
+
+
+def forecast_paths(hist: pd.DataFrame, model: str, H: int = 12, n_jobs: int = 2) -> np.ndarray:
+    """H x series array of log-value forecasts 1..H months past the last row of `hist`."""
+    if model.startswith("prophet"):
+        return _prophet(hist, H, n_jobs, **PROPHET_SETTINGS[model])
+    return _statsforecast(hist, H, model, n_jobs)
 
 
 def _statsforecast(hist: pd.DataFrame, H: int, model: str, n_jobs: int) -> np.ndarray:

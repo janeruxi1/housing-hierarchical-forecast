@@ -56,7 +56,7 @@ Phoenix -3.8 pp, Pittsburgh -1.0 pp).
 | Level | Chosen forecast | Momentum | No change |
 |---|---|---|---|
 | Nation | 4.3 pp | 5.3 pp | 7.0 pp |
-| States | 4.6 pp | 5.6 pp | 7.4 pp |
+| States | 4.7 pp | 5.6 pp | 7.4 pp |
 | Metros | 5.1 pp | 5.9 pp | 7.8 pp |
 | Counties | 5.2 pp | 6.1 pp | 7.9 pp |
 
@@ -108,6 +108,15 @@ on the test dates is the no-change forecast (4.3 pp); combo+bottom_up ties momen
 Prophet's default trend may only bend in the first 80% of the history, so in 2023 it carried the
 2020-22 boom forward. A later bend point, chosen on 2014-2021 only, halves its error, but its forecast
 still starts from its fitted trend rather than the latest value.
+
+**How sure.** The independent unit is the forecast date (every metro at a date shares the same shock,
+and 12-month outcomes from quarterly dates overlap), so the chosen forecast and momentum are compared date
+by date with a Diebold-Mariano test and a block-bootstrap interval for the skill. For metros over all 47
+dates: 60% below momentum at 1 month (95% interval 52 to 67%), 35% at 3 months (23 to 45%), 14% at 12
+months (-4% to +33%, Diebold-Mariano p = 0.31). On 2023-2025 alone the 1- and 3-month gains hold (63% and
+29%); the 12-month difference is nil.
+
+![Chosen forecast vs momentum, with 95% intervals](../reports/figures/05_skill_intervals.png)
 
 ![Final test: error by forecast date](../reports/figures/05_test_by_date.png)
 

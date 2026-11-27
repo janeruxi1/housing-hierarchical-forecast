@@ -46,7 +46,7 @@ only data available at its date, and a test checks this. RMSE of 12-month growth
 | Level | This model | Momentum | No change |
 |---|---|---|---|
 | Nation | 4.3 pp | 5.3 pp | 7.0 pp |
-| States | 4.6 pp | 5.6 pp | 7.4 pp |
+| States | 4.7 pp | 5.6 pp | 7.4 pp |
 | Metros | 5.1 pp | 5.9 pp | 7.8 pp |
 | Counties | 5.2 pp | 6.1 pp | 7.9 pp |
 
@@ -57,6 +57,9 @@ only data available at its date, and a test checks this. RMSE of 12-month growth
   on 2023-2025. The method picked scores 7.6 pp at metro 12 months against momentum's 4.5 pp: it fails.
   No candidate beats "no change" (4.3 pp); this model ties momentum (4.5 pp). At 1-3 months it stays well
   ahead at every level.
+* **How sure** (date-by-date Diebold-Mariano tests and block-bootstrap intervals, metros, all 47 dates):
+  60% below momentum at 1 month (95% interval 52 to 67%), 35% at 3 months (23 to 45%), 14% at 12 months
+  (-4% to +33%, not distinguishable from zero).
 * **Challengers** (50 largest metros, 12 months, 2023-25): AutoETS 3.4 pp (damped trend), AutoARIMA
   5.1 pp, Prophet 6.3 pp after tuning on 2014-2021.
 * **Ranges:** nominal 80% ranges cover 73% of metro outcomes at 12 months, and 95% ranges cover 89%.

@@ -106,6 +106,9 @@ stress = metrics_json("04_stress_falls")
 us0 = float(D["g12"]["US"])
 rate1 = {v: log_pp(float(scenario(v, 1.0, 0.0)["US"]), us0) for v in VERSIONS}
 metro12 = final[(final["level"] == "Metro") & (final["h"] == 12)].iloc[0]
+sig = metrics_csv("05_significance").set_index(["period", "level", "h"])
+sig3, sig12 = sig.loc[("all 47 dates", "Metro", 3)], sig.loc[("all 47 dates", "Metro", 12)]
+verdict = metrics_json("05_verdict")
 
 # --- Header -------------------------------------------------------------------
 st.title("🏠 Where Are US Home Values Heading, and What Would a Rate Shock Do?")
@@ -153,9 +156,11 @@ with tab_answer:
     k2.metric("Zillow's forecast, same month", pct(vs_z["us_zillow_pct"]), border=True,
               help=f"Zillow's published forecast (ZHVF). Across {vs_z['metros_compared']} metros this model sits a "
                    f"median {vs_z['median_gap_pp']:.1f} pp higher, so the memo budgets on Zillow's level.")
-    k3.metric("Metro forecast error vs momentum", f"{-metro12['skill_vs_momentum']:.0%}", border=True,
-              help=f"12-month error (RMSE): {metro12['combo+bottom_up']:.1f} pp against {metro12['momentum']:.1f} pp "
-                   "for momentum, over 47 forecast dates.")
+    k3.metric("Metro error vs momentum, 3 months ahead", f"{-sig3['skill']:.0%}", border=True,
+              help=f"Over 47 forecast dates; 95% interval {-sig3['skill_hi95']:.0%} to {-sig3['skill_lo95']:.0%}. "
+                   f"At 12 months the gain is {metro12['skill_vs_momentum']:.0%} ({metro12['combo+bottom_up']:.1f} pp "
+                   f"against {metro12['momentum']:.1f} pp), but its interval ({sig12['skill_lo95']:+.0%} to "
+                   f"{sig12['skill_hi95']:+.0%}) includes zero, and on 2023-25 alone it only ties momentum.")
     k4.metric("Large metros losing value under stress", f"{stress['metros_of_50_falling']} of 50", border=True,
               help="Zillow's own 12-month forecast plus this model's +2-point rate shock, for the 50 largest metros.")
 
@@ -193,7 +198,9 @@ with tab_answer:
         f"The gain is in the 2022-23 rate shock: {rs[(METHOD_LABEL['combo+bottom_up'], 'Rate shock')]:.1f} pp against "
         f"{rs[(METHOD_LABEL['momentum'], 'Rate shock')]:.1f} pp for momentum, because the panel model reads mortgage "
         f"rates. In the 2020-22 boom momentum was slightly better ({rs[(METHOD_LABEL['momentum'], 'Pandemic boom')]:.1f} "
-        f"vs {rs[(METHOD_LABEL['combo+bottom_up'], 'Pandemic boom')]:.1f} pp): no model saw that coming."
+        f"vs {rs[(METHOD_LABEL['combo+bottom_up'], 'Pandemic boom')]:.1f} pp): no model saw that coming. "
+        "Each period holds only a few forecast dates, so read these as indicative: compared date by date, the "
+        "12-month gain over momentum is not distinguishable from chance."
     )
     st.info(f"**For a risk committee:** budget on the more conservative level (Zillow's), and use this model for the "
             f"ranking and the rate stress, which is what it was built and backtested to do. "
@@ -417,7 +424,10 @@ the counties and add them up, was best on average. It costs a little at the top:
 {rec_us['rmse_pp']:.1f} pp against {rec_us['rmse_pp_base']:.1f} pp for forecasting the nation directly.
 
 **4. Test it honestly.** A rolling backtest: forecast from 47 past dates (each quarter, 2014-2025), using only the
-data available then, and score 1, 3, 6 and 12 months ahead at every level.
+data available then, and score 1, 3, 6 and 12 months ahead at every level. Then a final test with its rules written
+down first: choose the method on 2014-2021 only and score it once on 2023-2025. It
+**{"passed" if verdict["passes"] else "failed"}** at 12 months (no method beat "no change" a year out), so the claims
+rest on 1-3 months, ranking and the rate stress. Prophet, ETS and ARIMA ran as challengers (notebook 05).
 
 **5. Stress it.** Change the panel model's rate and unemployment inputs, scale each county's response by its beta,
 and add up.

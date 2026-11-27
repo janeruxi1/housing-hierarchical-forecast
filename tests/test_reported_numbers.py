@@ -67,6 +67,23 @@ CH_ROWS = [f"| {label} | {f1(ch05[m])} pp | {'-' if m == 'momentum' else int(win
     ("combo+bottom_up (this project)", "combo+bottom_up"), ("AutoARIMA", "autoarima"),
     ("Prophet, tuned on 2014-2021", prophet_pick), ("Prophet, default settings", "prophet")]]
 
+# Notebook 05: how sure (date-by-date Diebold-Mariano and block-bootstrap intervals, metros)
+sig = c("05_significance").set_index(["period", "level", "h"])
+s1, s3, s12 = (sig.loc[("all 47 dates", "Metro", h)] for h in (1, 3, 12))
+t1, t3 = (sig.loc[("test, 2023-25", "Metro", h)] for h in (1, 3))
+
+
+def pc(x):
+    return f"{round(100 * x)}"
+
+
+SIG_SHORT = (f"{pc(s1['skill'])}% below momentum at 1 month and {pc(s3['skill'])}% at 3 months (95% intervals "
+             f"{pc(s1['skill_lo95'])} to {pc(s1['skill_hi95'])}% and {pc(s3['skill_lo95'])} to {pc(s3['skill_hi95'])}%)")
+S12 = f"{100 * s12['skill_lo95']:+.0f}% to {100 * s12['skill_hi95']:+.0f}%"
+SIG_LONG = (f"{pc(s1['skill'])}% below momentum at 1 month (95% interval {pc(s1['skill_lo95'])} to "
+            f"{pc(s1['skill_hi95'])}%), {pc(s3['skill'])}% at 3 months ({pc(s3['skill_lo95'])} to {pc(s3['skill_hi95'])}%), "
+            f"{pc(s12['skill'])}% at 12 months ({S12}")
+
 LEVELS = [("National", "Nation"), ("State", "States"), ("Metro", "Metros"), ("County", "Counties")]
 ACCURACY_ROWS = [f"| {label} | {f1(final.loc[(lv, 12), chosen])} pp | {f1(final.loc[(lv, 12), 'momentum'])} pp | "
                  f"{f1(final.loc[(lv, 12), 'naive'])} pp |" for lv, label in LEVELS]
@@ -116,6 +133,8 @@ CLAIMS = {
         f"AutoARIMA scores {ARIMA} pp", f"Prophet {PROPHET} pp even after tuning",
         f"{T_CH} pp against momentum's {T_MOM} pp, better on only {v05['wins']} of 11 dates",
         f"ties momentum ({T_COMBO} pp, better on {T_COMBO_WINS} of 11)", *CH_ROWS,
+        SIG_SHORT, f"interval runs from {S12}", f"{SIG_LONG}, Diebold-Mariano p = {s12['dm_p']:.2f})",
+        f"gains hold ({pc(t1['skill'])}% and {pc(t3['skill'])}%)",
     ],
     "memo": [
         *ACCURACY_ROWS,
@@ -135,6 +154,7 @@ CLAIMS = {
         f"misses by {f1(scores.loc[(chosen, 'National', 12), 'rmse_pp'])} pp, against "
         f"{f1(scores.loc[('combo', 'National', 12), 'rmse_pp'])} pp",
         f"({T_NAIVE} pp for metros)", f"only ties momentum ({T_COMBO} pp)",
+        f"interval runs from {S12}", f"({pc(s1['skill'])}% and {pc(s3['skill'])}% below momentum for metros)",
     ],
     "card": [
         *ACCURACY_ROWS,
@@ -150,6 +170,7 @@ CLAIMS = {
         f"from {f1(r1_full['vs baseline (pp)'])} to {f1(r1_ex['vs baseline (pp)'])} pp",
         f"scores {T_CH} pp at metro 12 months against momentum's {T_MOM} pp", f"\"no change\" ({T_NAIVE} pp)",
         f"ties momentum ({T_COMBO} pp)", f"AutoETS {ETS} pp", f"AutoARIMA {ARIMA} pp", f"Prophet {PROPHET} pp",
+        f"{SIG_LONG}, not distinguishable from zero)",
     ],
     "phases": [
         f"{audit['counties_full_history']:,} counties", f"{round(100 * audit['share_of_us_housing_units_kept'])}%",
@@ -171,11 +192,15 @@ CLAIMS = {
         f"\"no change\" is best ({T_NAIVE} pp)",
         f"({ETS} pp on the 50 largest metros, better than momentum on {wins05['autoets']} of 11)",
         f"even after tuning ({PROPHET} pp)",
+        f"clear at 1 month ({pc(s1['skill'])}%, 95% interval {pc(s1['skill_lo95'])} to {pc(s1['skill_hi95'])}%) and 3 "
+        f"months ({pc(s3['skill'])}%, {pc(s3['skill_lo95'])} to {pc(s3['skill_hi95'])}%), but not at 12 months "
+        f"({pc(s12['skill'])}%, {S12})",
     ],
     "nb05": [f"{T_CH} pp metro 12-month error against {T_MOM} pp for momentum, better on only {v05['wins']} of "
              f"{v05['test_dates']}", f"no-change forecast ({T_NAIVE} pp)", f"({T_COMBO} pp, {T_COMBO_WINS} of 11 dates)",
              f"({ETS} pp on the 50 largest metros, better than momentum on {wins05['autoets']} of 11 dates)",
-             f"tuning on 2014-2021 ({PROPHET} pp)"],
+             f"tuning on 2014-2021 ({PROPHET} pp)", f"(95% interval {S12})",
+             f"({pc(s1['skill'])}% and {pc(s3['skill'])}% for metros)"],
     "nb03": [rs_cut.replace(" to ", " pp to ", 1), f"{metro_skill} lower", f"about {cov80} of metro"],
     "nb04": [shock_range.replace(" to ", "-"), by_metro("Las Vegas, NV"), by_metro("Phoenix, AZ"), by_metro("Pittsburgh, PA"),
              f"correlation {zf['correlation']:.2f}"],
@@ -242,3 +267,11 @@ def test_forward_forecasts_are_frozen():
     assert set(f["method"]) == {"combo+bottom_up", "momentum", "naive", "autoets", "autoarima", "prophet_cr95_flex"}
     assert f.groupby("method").size().eq(400).all() and set(f["h"]) == {1, 3, 6, 12}
     assert (f["origin"] == "2026-09-30").all()
+
+
+
+def test_significance_claims_hold():
+    """'Clear at 1-3 months, could be chance at 12' holds in the recorded tests."""
+    for r in (s1, s3, t1, t3):
+        assert r["skill_lo95"] > 0 and r["dm_p"] < 0.05
+    assert s12["skill_lo95"] < 0 < s12["skill_hi95"] and s12["dm_p"] > 0.05

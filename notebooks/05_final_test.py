@@ -14,7 +14,7 @@
 # | | |
 # |---|---|
 # | **Question** | Does the method picked on 2014-2021 still beat the simple rules on 2023-2025, and how do Prophet, ETS and ARIMA compare? |
-# | **Answer** | No. The rule picks zillow_style+mint_shrink, which then fails the test plainly: 7.6 pp metro 12-month error against 4.5 pp for momentum, better on only 2 of 11 forecast dates. No candidate passes: the best of the 26 on the test dates is the no-change forecast (4.3 pp), and combo+bottom_up, the README's model, ties momentum (4.5 pp, 5 of 11 dates). Our models stay far ahead at 1-3 months. Of the challengers, a damped-trend ETS is best on 2023-25 (3.4 pp on the 50 largest metros, better than momentum on 10 of 11 dates); Prophet is the worst, even after tuning on 2014-2021 (6.3 pp). |
+# | **Answer** | No. The rule picks zillow_style+mint_shrink, which then fails the test plainly: 7.6 pp metro 12-month error against 4.5 pp for momentum, better on only 2 of 11 forecast dates. No candidate passes: the best of the 26 on the test dates is the no-change forecast (4.3 pp), and combo+bottom_up, the README's model, ties momentum (4.5 pp, 5 of 11 dates). Compared date by date, even the full backtest's 12-month gain over momentum could be chance (95% interval -4% to +33%), while the 1- and 3-month gains are clear (60% and 35% for metros). Of the challengers, a damped-trend ETS is best on 2023-25 (3.4 pp on the 50 largest metros, better than momentum on 10 of 11 dates); Prophet is the worst, even after tuning on 2014-2021 (6.3 pp). |
 # | **Next** | Damped ETS joins the candidates, and the forecasts frozen in section 5 are the next real test. |
 
 # %%
@@ -137,6 +137,60 @@ tab = tab.sort_values("test")
 write_metrics("05_all_methods_metro12", tab.reset_index())
 del m12, bo_all
 tab.round(2)
+
+# %% [markdown]
+# ### How sure are these differences?
+#
+# A difference in RMSE is only worth reporting if it is larger than chance. The independent unit
+# is the forecast date, not the forecast: every metro at one date shares the same national shock,
+# and 12-month outcomes from quarterly dates overlap (each shares 9 months with the next date). So
+# for the chosen method against momentum, each date's mean squared error is compared with a
+# **Diebold-Mariano test** (Newey-West variance over the overlapping dates, with the small-sample
+# correction), and the skill gets a 95% interval from a **block bootstrap** that resamples runs of
+# consecutive dates.
+
+# %%
+pair = res[res["method"].isin(["combo+bottom_up", "momentum"])]
+sig_rows = []
+for period, sub in [("all 47 dates", pair), ("test, 2023-25", pair[pair["period"] == "test"])]:
+    for lv in ["National", "State", "Metro", "County"]:
+        for h in (1, 3, 6, 12):
+            a = bt.per_date_mse(sub, "combo+bottom_up", lv, h)
+            b = bt.per_date_mse(sub, "momentum", lv, h)
+            lag = bt.overlap_lag(h)
+            stat, p = bt.dm_test(a, b, lag)
+            lo, hi = bt.block_bootstrap_skill(a, b, block=max(lag + 1, 2))
+            sig_rows.append({"period": period, "level": lv, "h": h, "dates": len(a),
+                             "skill": 1 - np.sqrt(a.mean() / b.mean()), "skill_lo95": lo, "skill_hi95": hi,
+                             "dm_stat": stat, "dm_p": p})
+sig = pd.DataFrame(sig_rows)
+write_metrics("05_significance", sig)
+del pair
+show = sig.assign(**{c: (100 * sig[c]).round(0) for c in ["skill", "skill_lo95", "skill_hi95"]})
+show[show["level"].isin(["National", "Metro"])].set_index(["period", "level", "h"])[
+    ["skill", "skill_lo95", "skill_hi95", "dm_p"]].round(3)
+
+# %%
+fig, axes = plt.subplots(1, 2, figsize=(9, 3.6), sharey=True, sharex=True)
+for ax, period in zip(axes, ["all 47 dates", "test, 2023-25"]):
+    d = sig[(sig["period"] == period) & (sig["level"] == "Metro")]
+    y = np.arange(len(d))
+    ax.errorbar(100 * d["skill"], y, xerr=[100 * (d["skill"] - d["skill_lo95"]), 100 * (d["skill_hi95"] - d["skill"])],
+                fmt="o", color=COLORS["ours"], capsize=3)
+    ax.axvline(0, color="k", lw=0.8)
+    ax.set_yticks(y, [f"{h} month{'s' if h > 1 else ''}" for h in d["h"]])
+    ax.set_title(period, fontsize=10)
+    ax.set_xlabel("Metro error below momentum (%)")
+axes[0].invert_yaxis()
+fig.suptitle("Chosen forecast vs momentum, with 95% intervals: clear at 1-3 months, not at 12", y=1.0)
+fig.tight_layout()
+save(fig, "05_skill_intervals")
+
+# %% [markdown]
+# The short-range gain is large and clear in both periods. The 12-month gain is not: over all 47
+# dates its interval includes zero, so the headline "14% below momentum" could be chance. That is
+# the strongest reason the memo leans on ranking, short horizons and rate stress rather than on the
+# 12-month level.
 
 # %% [markdown]
 # ## 3. Prophet, ETS and ARIMA
@@ -279,8 +333,7 @@ for h in (1, 3, 6, 12):
     rows.append(pd.DataFrame({"method": "naive", "h": h, "unique_id": fids, "pred_pct": 0.0}))
 for m in ("autoets", "autoarima", prophet_pick):
     hist = L[fids]
-    fc = (ft._prophet(hist, 12, 2, **ft.PROPHET_SETTINGS[m]) if m.startswith("prophet")
-          else ft._statsforecast(hist, 12, m, 2))
+    fc = ft.forecast_paths(hist, m, 12)
     for h in (1, 3, 6, 12):
         rows.append(pd.DataFrame({"method": m, "h": h, "unique_id": fids,
                                   "pred_pct": 100 * (fc[h - 1] - hist.iloc[-1].to_numpy())}))

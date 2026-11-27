@@ -117,16 +117,18 @@ def panel(L: pd.DataFrame, F: dict, levels: dict, origins: pd.DatetimeIndex, hor
     depends on it.
 
     Training rows for origin o and horizon h are months t with t + h <= o, so every target used is
-    fully observed at the origin. Features are standardised with the training-period scale.
+    fully observed at the origin. Features are standardised (this only scales the small ridge
+    penalty) with their spread up to the first origin, so no forecast depends on later data.
     """
     T = len(L.index)
     start = L.index.get_loc(L.index[L.index >= TRAIN_START][0])
+    cut = max(L.index.get_loc(origins[0]) + 1, start + 2)          # scale from data known at the first origin
     preds = {(o, h): np.full(L.shape[1], np.nan) for o in origins for h in horizons}
     coefs = {}
     for level, ids in levels.items():
         cols = [L.columns.get_loc(c) for c in ids]
         Xraw = np.stack([F[f].to_numpy()[:, cols] for f in FEATURES], axis=-1)     # T x n x k
-        scale = np.nanstd(Xraw[start:], axis=(0, 1))
+        scale = np.nanstd(Xraw[start:cut], axis=(0, 1))
         scale[scale == 0] = 1
         X = np.concatenate([np.ones(Xraw.shape[:2] + (1,)), Xraw / scale], axis=-1)
         Lv = L.to_numpy()[:, cols]

@@ -2,7 +2,7 @@
   "chosen": "zillow_style+mint_shrink",
   "reference": "momentum",
   "test_dates": 11,
-  "rmse_chosen_pp": 7.638425447225526,
+  "rmse_chosen_pp": 7.641634138772751,
   "rmse_reference_pp": 4.495679684122624,
   "wins": 2,
   "rule_rmse_lower": false,

@@ -15,13 +15,14 @@ checks every number below against the recorded results.
 
 ## Key results
 
-- **Better at 1-3 months; a year out, no better than simple rules on later data.** "The last 12 months'
-  growth continues" (momentum) is the usual shortcut. Over all 47 quarterly forecast dates, 2014-2025, the
-  chosen forecast's metro 12-month error is 14% below momentum, and in the 2022-23 rate shock it falls from
-  10.6 to 6.0 pp, 44% lower. But a final test with its rules written down first (choose on 2014-2021, score
-  once on 2023-2025) fails: the method the early years pick scores 7.6 pp against momentum's 4.5 pp, and no
-  candidate beats the no-change forecast (4.3 pp) at 12 months. At 1-3 months the reconciled forecasts stay
-  well ahead at every level.
+- **Clearly better at 1-3 months; a year out, no better than simple rules.** "The last 12 months' growth
+  continues" (momentum) is the usual shortcut. Over 47 quarterly forecast dates, 2014-2025, the chosen
+  forecast's metro error is 60% below momentum at 1 month and 35% at 3 months (95% intervals 52 to 67% and
+  23 to 45%), and both gains hold on 2023-2025 alone. At 12 months it is 14% below momentum, and in the
+  2022-23 rate shock it falls from 10.6 to 6.0 pp, 44% lower, but the 12-month interval runs from -4% to +33%:
+  it could be chance. A final test with its rules written down first (choose on 2014-2021, score once on
+  2023-2025) fails: the method the early years pick scores 7.6 pp against momentum's 4.5 pp, and no candidate
+  beats the no-change forecast (4.3 pp) a year out.
 - **Prophet, ETS and ARIMA as challengers.** On the 50 largest metros in 2023-25, a damped-trend AutoETS has
   the lowest 12-month error (3.4 pp, better than momentum on 10 of 11 dates). AutoARIMA scores 5.1 pp, and
   Prophet 6.3 pp even after tuning on 2014-2021. Damped ETS joins the candidates, and forecasts frozen in
@@ -49,7 +50,7 @@ Drawn from the recorded results by `scripts/make_readme_figure.py`.*
 | Bar to beat | Rolling-origin backtest harness at 1/3/6/12 months; four no-model rules (no change, drift, momentum, long-run) | [02](notebooks/02_baselines_backtest.ipynb) |
 | Models and reconciliation | Per-place ARIMA(2,1,0), a direct panel regression that reads mortgage rates and unemployment, a Zillow-style model and their combination; bottom-up vs three MinTrace variants; time-safe conformal ranges | [03](notebooks/03_models_reconciliation.ipynb) |
 | Forecast and stress | Forecast from September 2026; comparison with Zillow's published forecast; rate and unemployment scenarios x each county's beta, added up | [04](notebooks/04_scenarios.ipynb) |
-| Final test | Rules written first ([plan](docs/final_test_plan.md)): choose on 2014-2021, score once on 2023-2025; Prophet (tuned on 2014-2021 only), AutoETS and AutoARIMA as challengers; today's forecasts frozen for a forward test | [05](notebooks/05_final_test.ipynb) |
+| Final test | Rules written first ([plan](docs/final_test_plan.md)): choose on 2014-2021, score once on 2023-2025; Diebold-Mariano tests and block-bootstrap intervals by forecast date; Prophet (tuned on 2014-2021 only), AutoETS and AutoARIMA as challengers; today's forecasts frozen for a forward test | [05](notebooks/05_final_test.ipynb) |
 | Demo | Any state, metro or county, and the rate-shock sliders, on a derived extract that CI checks against the records | [`app/`](app/streamlit_app.py) |
 
 ![Key results at a glance](reports/figures/00_readme_summary.png)

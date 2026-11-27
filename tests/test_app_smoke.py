@@ -32,6 +32,8 @@ def test_headline_matches_recorded_metrics(app):
     assert v["Zillow's forecast, same month"] == f"{z['us_zillow_pct']:+.1f}%"
     stress = json.loads((M / "04_stress_falls.json").read_text())
     assert v["Large metros losing value under stress"] == f"{stress['metros_of_50_falling']} of 50"
+    sig = pd.read_csv(M / "05_significance.csv").set_index(["period", "level", "h"])
+    assert v["Metro error vs momentum, 3 months ahead"] == f"{-sig.loc[('all 47 dates', 'Metro', 3), 'skill']:.0%}"
 
 
 def test_every_level_and_the_largest_places(app):

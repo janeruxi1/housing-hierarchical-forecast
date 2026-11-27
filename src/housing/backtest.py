@@ -203,3 +203,56 @@ def conformal_coverage(res: pd.DataFrame, levels=(0.8, 0.95), min_past: int = 8)
     out = pd.DataFrame(rows)
     return out.groupby(["level", "h", "nominal"]).agg(coverage=("covered", "mean"), median_width_pp=("width_pp", "median"),
                                                        origins=("origin", "nunique")).reset_index()
+
+
+# --- how sure is a difference in accuracy? ----------------------------------------------------
+def per_date_mse(res: pd.DataFrame, method: str, level: str, h: int) -> pd.Series:
+    """Mean squared growth error across a level's nodes, one value per forecast date.
+
+    Comparing methods date by date (not forecast by forecast) respects that all nodes at one date
+    share the same shock: the independent unit is the date, not the node.
+    """
+    r = res[(res["method"] == method) & (res["level"] == level) & (res["h"] == h)]
+    e = r["pred"].astype("float64") - r["actual"].astype("float64")
+    return (e ** 2).groupby(r["origin"], observed=True).mean()
+
+
+def dm_test(loss_a: pd.Series, loss_b: pd.Series, lag: int) -> tuple[float, float]:
+    """Diebold-Mariano test of equal accuracy, with the Harvey-Leybourne-Newbold correction.
+
+    The loss differential's variance uses Bartlett (Newey-West) weights up to `lag`: forecasts
+    whose outcome windows overlap (12-month outcomes from quarterly dates overlap 3 dates) are not
+    independent. Returns (statistic, two-sided p-value from a t distribution with n - 1 df).
+    """
+    from scipy import stats
+
+    d = (loss_a - loss_b).dropna().to_numpy()
+    n = len(d)
+    dc = d - d.mean()
+    gamma = [dc @ dc / n] + [dc[k:] @ dc[:-k] / n for k in range(1, lag + 1)]
+    var = gamma[0] + 2 * sum((1 - k / (lag + 1)) * gamma[k] for k in range(1, lag + 1))
+    if var <= 0:
+        return float("nan"), float("nan")
+    hln = np.sqrt((n + 1 - 2 * (lag + 1) + (lag + 1) * lag / n) / n)
+    stat = hln * d.mean() / np.sqrt(var / n)
+    return float(stat), float(2 * stats.t.sf(abs(stat), n - 1))
+
+
+def block_bootstrap_skill(loss_a: pd.Series, loss_b: pd.Series, block: int, reps: int = 4000,
+                          seed: int = 0) -> tuple[float, float]:
+    """95% interval for skill = 1 - RMSE_a / RMSE_b, resampling runs of `block` consecutive dates."""
+    a, b = loss_a.to_numpy(), loss_b.to_numpy()
+    n = len(a)
+    block = max(1, min(block, n))
+    rng = np.random.default_rng(seed)
+    k = int(np.ceil(n / block))
+    starts = rng.integers(0, n - block + 1, size=(reps, k))
+    idx = (starts[..., None] + np.arange(block)).reshape(reps, -1)[:, :n]
+    skill = 1 - np.sqrt(a[idx].mean(1) / b[idx].mean(1))
+    lo, hi = np.percentile(skill, [2.5, 97.5])
+    return float(lo), float(hi)
+
+
+def overlap_lag(h: int, step_months: int = 3) -> int:
+    """How many later forecast dates share part of an h-month outcome window."""
+    return max(0, int(np.ceil(h / step_months)) - 1)

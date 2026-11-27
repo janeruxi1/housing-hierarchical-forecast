@@ -43,11 +43,13 @@
 | Level | This forecast | Momentum | No change |
 |---|---|---|---|
 | Nation | 4.3 pp | 5.3 pp | 7.0 pp |
-| States | 4.6 pp | 5.6 pp | 7.4 pp |
+| States | 4.7 pp | 5.6 pp | 7.4 pp |
 | Metros | 5.1 pp | 5.9 pp | 7.8 pp |
 | Counties | 5.2 pp | 6.1 pp | 7.9 pp |
 
-   A stricter test says less at 12 months. Choosing the method on 2014-2021 and scoring it once on
+   The 12-month gain is also uncertain: compared date by date, its 95% interval runs from -4% to +33%,
+   while the 1- and 3-month gains are clear (60% and 35% below momentum for metros). A stricter test says
+   less at 12 months. Choosing the method on 2014-2021 and scoring it once on
    2023-2025, no candidate beats "no change" a year out (4.3 pp for metros), and this forecast only ties
    momentum (4.5 pp). That is why item 3 budgets on Zillow's level and uses this model for ranking and
    stress, where its edge (1-3 months, and the 2022 turn) is clearer.

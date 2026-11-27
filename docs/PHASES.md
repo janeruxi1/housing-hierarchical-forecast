@@ -210,7 +210,8 @@ spread, the multiple set from past errors at the same level.
 
 * **Tests.** `pytest` covers:
   * the joins, gap filling and the hierarchy (every level sums to the nation);
-  * no peeking in the backtest;
+  * no peeking in the backtest, for the simple rules and for every model (rates, unemployment and
+    home values after a date are changed, and forecasts made before it must not move);
   * reconciliation against the textbook formula and the library;
   * scenario coherence;
   * every number quoted in the README, memo, model card and notebook summaries, checked against
@@ -235,6 +236,10 @@ spread, the multiple set from past errors at the same level.
 * *An overclaim.* "Bottom-up is as accurate as the best MinTrace" holds at metro and county level, not
   nationally; the wording now says so. A README line saying reconciliation "usually improves accuracy"
   was removed, because the results here do not support it.
+* *A tiny peek.* The panel regression scaled its inputs with their spread over the whole sample.
+  That only set the size of a very small ridge penalty (forecasts moved by under 0.01 pp), but it broke
+  the no-peeking rule, so the scale now comes from data up to the first forecast date and a test checks
+  every model. One reported figure moved: states at 12 months, 4.6 to 4.7 pp.
 * *Memory.* The backtest tables (9.9 million rows) were made compact so the analysis fits in 4 GB.
 
 **Added after the review.** A live demo (Streamlit), like the other projects. It reads a small extract of
@@ -274,6 +279,9 @@ and scoring it where it was picked flatters it. Does the choice hold on dates it
 **What it found.**
 * The rule picks zillow_style+mint_shrink, and it fails: 7.6 pp against momentum's 4.5 pp, better on 2 of
   11 dates. No candidate passes; "no change" is best (4.3 pp) and combo+bottom_up ties momentum.
+* *How sure.* Compared date by date (Diebold-Mariano, block bootstrap), the metro gain over momentum is
+  clear at 1 month (60%, 95% interval 52 to 67%) and 3 months (35%, 23 to 45%), but not at 12 months (14%,
+  -4% to +33%). So even the full-backtest 12-month headline could be chance.
 * Damped-trend ETS is best on the test dates (3.4 pp on the 50 largest metros, better than momentum on 10
   of 11). Prophet is worst even after tuning (6.3 pp).
 
@@ -283,6 +291,9 @@ and scoring it where it was picked flatters it. Does the choice hold on dates it
 * Damped ETS joins the candidates but is not declared the winner: it was added after this test was seen.
 * Next time the selection rule should weight the horizon the decision uses (12 months) and check each
   period, not only the average, which favoured trend-followers.
+
+**Reviewer objection:** "Your 14% has no error bar." It now has one, and it spans zero; the claims were
+narrowed to match.
 
 **Reviewer objection:** "You saw 2022-23 while designing the models." Yes: the rate inputs were added with
 the whole history in view. The test period was not used to choose among methods, but it is not unseen.

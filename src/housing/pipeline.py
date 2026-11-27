@@ -2,7 +2,7 @@
 
 Base forecasts come from every month-end from 2012 (cheap, and they supply the past errors the
 reconciliation weights need). Reconciliation and the head-to-head comparison use quarterly origins
-from 2014 (48 forecast dates), when every model has at least four years of training data.
+from 2014 (47 forecast dates), when every model has at least four years of training data.
 """
 from __future__ import annotations
 
